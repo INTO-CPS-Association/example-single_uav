@@ -1,0 +1,66 @@
+when time = 0.1 do
+(de real pilote_desired_throttle := 650;);
+
+when time = 1.1 do
+(de real rollTarget := 3000;
+de real pitchTarget := 0;);
+
+when time = 3.4 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 5.9 do
+(de real rollTarget := -3000;
+de real pitchTarget := 0;);
+
+when time = 8.2 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 10.7 do
+(de real rollTarget := 0;
+de real pitchTarget := 3000;);
+
+when time = 13.2 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 15.5 do
+(de real rollTarget := 0;
+de real pitchTarget := -3000;);
+
+when time = 18 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 20.4 do
+(de real rollTarget := 3000;
+de real pitchTarget := 3000;);
+
+when time = 22.9 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 25.2 do
+(de real rollTarget := 3000;
+de real pitchTarget := -3000;);
+
+when time = 27.7 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 30 do
+(de real rollTarget := -3000;
+de real pitchTarget := 3000;);
+
+when time = 32.6 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);
+
+when time = 34.9 do
+(de real rollTarget := -3000;
+de real pitchTarget := -3000;);
+
+when time = 37.4 do
+(de real rollTarget := 0;
+de real pitchTarget := 0;);

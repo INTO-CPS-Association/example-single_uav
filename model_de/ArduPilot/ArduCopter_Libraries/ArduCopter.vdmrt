@@ -1,0 +1,140 @@
+class ArduCopter
+
+instance variables
+	gps :			AP_GPS;
+	baro :			AP_Baro; 
+	compass : 		AP_Compass;
+	ins :			AP_InertialSensor;
+	ahrs :			AP_AHRS_NavEKF;
+	insNav :		AP_InertialNav_NavEKF;
+	scheduler :		AP_Scheduler;
+	attController : AC_AttitudeControl;
+	posController : AC_PosControl;
+	motors :		AP_MotorsQuad;
+	fltMode : 		FlightMode;
+	posVec :		PositionVector;
+	navigation :	Navigation;
+	attitude : 		Attitude;
+	battMon : 		AP_BattMonitor;
+	
+operations
+	public ArduCopter: () ==> ArduCopter
+	ArduCopter() == (
+		-- Sensors
+	 	gps := new AP_GPS();
+		baro := new AP_Baro(); 
+		compass := new AP_Compass();
+		ins := new AP_InertialSensor();
+		
+		-- Attitude Heading Reference estimation
+		ahrs := new AP_AHRS_NavEKF(ins, baro, gps);
+		-- Navigation: position and velocity based on inertial sensors
+		insNav := new AP_InertialNav_NavEKF(ahrs);
+		
+		-- Motors
+		motors := new AP_MotorsQuad();
+		
+		-- Controllers
+		if USE_MPC = 0 then 
+			attController := new AC_AttitudeControl_PID(ahrs, motors)
+		else
+			attController := new AC_AttitudeControl_MPC(ahrs, motors); -- MPC attitude controller
+		
+		posController := new AC_PosControl(ahrs, insNav, motors, attController);
+
+		-- ArduCopter pde files:
+		fltMode := new FlightMode(attController, posController);
+		posVec := new PositionVector(ahrs, insNav);
+		navigation := new Navigation(fltMode, posVec, insNav, ahrs); 
+		attitude := new Attitude(posController, motors, insNav);
+		
+		-- Battery monitor
+		battMon := new AP_BattMonitor(compass, motors);
+		
+		-- Scheduling	
+		scheduler := new AP_Scheduler(self);
+		
+		-- MPC init
+	);
+
+	-- periodic operation
+	loop: () ==> ()
+	loop() == duration(MAIN_LOOP_RATE * 1e9)(	
+	    -- Wait for inertial sample: The correct wait time is given by the duration^
+	    ins.read();
+	    
+	    -- Run the fast loop
+	    fastLoop();
+	    
+	    -- Run other tasks
+	    scheduler.run();
+	);
+	
+	fastLoop: () ==> ()
+	fastLoop() == (	
+	    -- Update AHRS
+	    ahrs.update();
+	    
+	    -- Run low level attitude control
+	    attController.rate_controller_run();
+	    
+	    -- Motors output
+	    motors.output();
+	    
+	    -- Update inertial navigation: position and velocity
+	    insNav.update();
+	    
+	    -- Update flight mode (run higher level attitude/position controllers)
+	    fltMode.update();
+	);
+	
+	
+	
+	-- Scheduler tasks:
+	public throttle_loop: () ==> ()
+	throttle_loop() == ( 
+		-- TODO Implement update_throttle_low_comp
+		skip;
+	);
+	
+	public update_GPS: () ==> ()
+	update_GPS() == (
+		gps.update();
+	);
+	
+	public update_batt_compass: () ==> ()
+	update_batt_compass() == (
+		battMon.read();
+	);
+	
+	public update_altitude: () ==> ()
+	update_altitude() == (
+		baro.read();
+	);
+	
+	public run_nav_updates: () ==> ()
+	run_nav_updates() == (
+		navigation.update();
+	);
+	
+	-- Update average hover throttle
+	public update_thr_average: () ==> ()
+	update_thr_average() == (
+		attitude.updateThresholdAverage();
+	);
+	
+	public compass_accumulate: () ==> ()
+	compass_accumulate() == (
+		compass.accumulate();
+	);
+
+
+
+-- define periodic thread (nanoseconds)
+thread periodic(MAIN_LOOP_RATE * 1e9, 0, 0, 0)(loop)
+
+values
+	public USE_MPC : real = 0; -- sdp
+	public MAIN_LOOP_RATE : real = 400; -- sdp
+
+end ArduCopter

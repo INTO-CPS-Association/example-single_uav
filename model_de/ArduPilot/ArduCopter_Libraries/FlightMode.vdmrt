@@ -1,0 +1,60 @@
+class FlightMode
+
+types
+	public MODE = <ACRO> | <STABILIZE> | <ALT_HOLD> | <AUTO> | <CIRCLE> | <LOITER> | <LAND> |
+					<GUIDED> | <RTL> | <DRIFT> | <SPORT> | <FLIP> | <AUTOTUNE> | <POSHOLD>
+instance variables
+	attitudeControl : AC_AttitudeControl;
+	posControl : AC_PosControl;
+	controlMode: MODE := <STABILIZE>; --<ALT_HOLD>;
+	
+	rollTarget : real := 0;
+	pitchTarget : real := 0;
+	yawRateTarget : real := 0;
+	climbRateTarget : real := 0;
+	
+	pilote_desired_throttle : real := 0;
+	
+	-- smoothing_gain : a number from 1 to 50 with 1 being sluggish and 50 being very crisp
+	smoothingGain : real := 38;
+
+operations 
+	public FlightMode : AC_AttitudeControl * AC_PosControl ==> FlightMode
+	FlightMode(att, pos) == (
+		attitudeControl := att;
+		posControl := pos;
+	);
+	
+	public update : () ==> ()
+	update() == (
+		
+		cases controlMode :
+		<ALT_HOLD> -> altholdUpdate(),
+		<STABILIZE> -> stabilizaUpdate()
+		end
+	);
+	
+	public getMode : () ==> MODE 
+	getMode() == return controlMode;
+	
+	public setMode : MODE ==> () 
+	setMode(mode) == (
+		controlMode := mode;
+	); 
+	
+	private altholdUpdate : () ==> ()
+	altholdUpdate() ==
+	(
+		attitudeControl.update(rollTarget,pitchTarget,yawRateTarget,smoothingGain);
+		posControl.setAltTargetFromClimbRate(climbRateTarget);
+        posControl.updateZController();
+	);
+
+	private stabilizaUpdate : () ==> ()
+	stabilizaUpdate() ==
+	(
+		attitudeControl.update(rollTarget,pitchTarget,yawRateTarget,smoothingGain);
+		attitudeControl.setThrottleOut(pilote_desired_throttle, true);
+	);
+	
+end FlightMode

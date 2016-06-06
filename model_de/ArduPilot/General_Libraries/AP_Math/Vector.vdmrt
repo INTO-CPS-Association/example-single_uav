@@ -1,0 +1,78 @@
+class Vector
+
+types
+	public Vector3 ::
+		x : real
+		y : real
+		z : real
+	
+	
+operations
+	-- TODO: Make these operations as functions
+	public static add: set of Vector3 ==> Vector3
+	add(vectors) == (
+		dcl res : Vector3 := mk_Vector3(0,0,0);
+		for all vec in set vectors do
+		(
+			res.x := res.x + vec.x;
+			res.y := res.y + vec.y;
+			res.z := res.z + vec.z;
+		);
+		return res;
+	);
+	
+	public static add: Vector3 * real ==> Vector3
+	add(vector, scalar) == 
+		return mk_Vector3(vector.x + scalar, vector.y + scalar, vector.z + scalar);
+	
+	public static subtract: Vector3 * real ==> Vector3
+	subtract(vector, scalar) == 
+		return add(vector,-scalar);
+	
+functions
+	public divide: Vector3 * real -> Vector3
+	divide(vec, scalar) == 
+		mk_Vector3(vec.x/scalar, vec.y/scalar, vec.z/scalar)
+	pre scalar <> 0;
+	
+	public multiply: Vector3 * real -> Vector3
+	multiply(vec, scalar) == 
+		mk_Vector3(vec.x*scalar, vec.y*scalar, vec.z*scalar);
+	
+	public zero: () -> Vector3
+	zero() ==
+		mk_Vector3(0,0,0);
+
+
+	public pythagoras2: real * real -> real
+	pythagoras2(x,y) == (
+		MATH`sqrt(x*x + y*y)
+	)
+	pre x >= 0 and y >= 0;
+	
+	
+	-- Implementation of atan2 is based on:
+	-- http://en.wikipedia.org/wiki/Atan2
+	public atan2: real * real -> real
+	atan2(x,y) == (
+		if x > 0 then
+			MATH`atan(y/x)
+		
+		else if y >= 0 and x < 0 then
+			MATH`atan(y/x) + MATH`pi
+		
+		else if y < 0 and x < 0 then
+			MATH`atan(y/x) - MATH`pi
+		
+		else if y > 0 and x = 0 then
+			MATH`pi/2
+		
+		else if y < 0 and x = 0 then
+			-MATH`pi/2
+		
+		else -- y = 0 and x = 0
+			0		
+	)
+	pre not (x = 0 and y = 0); 
+	
+end Vector

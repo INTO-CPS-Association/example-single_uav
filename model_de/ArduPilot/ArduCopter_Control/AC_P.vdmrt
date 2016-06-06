@@ -1,0 +1,18 @@
+class AC_P
+
+instance variables
+	kp : real;
+
+operations
+	public AC_P: real ==> AC_P
+	AC_P(p) == (
+		kp := p;
+	); 
+	
+	public getP : real ==> real
+	getP(err) == return err * kp;
+	
+	public getKp : () ==> real
+	getKp() == return kp;
+	
+end AC_P

@@ -1,0 +1,29 @@
+class AP_BattMonitor 
+
+instance variables
+	-- Contract connections
+	voltage : real := 0;
+	current : real := 0;
+
+	compass : AP_Compass;
+	motors	: AP_Motors;
+	
+operations
+
+	public AP_BattMonitor: AP_Compass * AP_Motors ==> AP_BattMonitor
+	AP_BattMonitor(com, mot) == (
+		compass := com;
+		motors := mot;
+	);
+	
+	public read: () ==> ()
+	read() == (
+		
+		--compass.setCurrent(current);
+		
+		motors.setCurrent(current);
+		motors.setVoltage(voltage);
+	);
+
+
+end AP_BattMonitor

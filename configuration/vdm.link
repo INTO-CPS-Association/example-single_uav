@@ -1,0 +1,34 @@
+-- Linking of Shared Design Parameters
+sdp GRAVITY_MSS = AP_Math.GRAVITY_MSS;
+sdp USE_MPC = ArduCopter.USE_MPC;
+sdp MAIN_LOOP_RATE = ArduCopter.MAIN_LOOP_RATE;
+
+-- Linking of Monitored Variables
+input gyroX = ArduPilot.arduCopter.ins.gyroRateX;
+input gyroY = ArduPilot.arduCopter.ins.gyroRateY;
+input gyroZ = ArduPilot.arduCopter.ins.gyroRateZ;
+
+input accelerometerX = ArduPilot.arduCopter.ins.accelX;
+input accelerometerY = ArduPilot.arduCopter.ins.accelY;
+input accelerometerZ = ArduPilot.arduCopter.ins.accelZ;
+
+input gpsZ = ArduPilot.arduCopter.gps.locationAlt;
+input gpsVelX = ArduPilot.arduCopter.gps.velocityX;
+input gpsVelY = ArduPilot.arduCopter.gps.velocityY;
+input gpsVelZ = ArduPilot.arduCopter.gps.velocityZ;
+
+-- Linking of Controlled Variables
+output motorSetpoint1 = ArduPilot.arduCopter.motors.motor1;
+output motorSetpoint2 = ArduPilot.arduCopter.motors.motor2;
+output motorSetpoint3 = ArduPilot.arduCopter.motors.motor3;
+output motorSetpoint4 = ArduPilot.arduCopter.motors.motor4;
+
+-- Linking of Events
+--event HIGH=System.eventHandler.high;
+
+-- other linked names used in scenarios
+model rollTarget = ArduPilot.arduCopter.fltMode.rollTarget;
+model pitchTarget = ArduPilot.arduCopter.fltMode.pitchTarget;
+model yawRateTarget = ArduPilot.arduCopter.fltMode.yawRateTarget;
+model climbRateTarget = ArduPilot.arduCopter.fltMode.climbRateTarget;
+model pilote_desired_throttle = ArduPilot.arduCopter.fltMode.pilote_desired_throttle;

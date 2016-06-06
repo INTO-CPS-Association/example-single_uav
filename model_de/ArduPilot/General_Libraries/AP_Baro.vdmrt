@@ -1,0 +1,54 @@
+class AP_Baro
+
+
+instance variables
+	-- TODO Contract connections
+	pressure : real := 1; -- Pascal
+	temperature : real := 0; -- Celcius
+	
+	-- Sampled values
+	public altitude : real := 0; -- cm above home
+	public climbRate : real := 0; -- cm/s
+	
+	-- Derivative filter for climb rate
+	lastTimestamp : nat := 0; -- in ms
+	climbRateFilter : DerivativeFilter;
+	
+operations
+	public AP_Baro: () ==> AP_Baro
+	AP_Baro() == (
+		climbRateFilter := new DerivativeFilter(7);
+	); 
+	
+	public read: () ==> ()
+	read() == (
+		altitude := getAltitudeDifference(pressure, temperature) * 100;	-- translate from m to cm
+		climbRateFilter.update(altitude, lastTimestamp);
+		
+		climbRate := getClimbRate() * 100; -- translate from m/s to cm/s
+		
+		lastTimestamp := time/1E6; -- in ms
+	);
+	
+	
+	private getClimbRate: () ==> real
+	getClimbRate() == (
+		return climbRateFilter.slope() * 1E3; -- Tranlate from m/ms to m/s
+	);
+	
+	
+functions
+	private getAltitudeDifference: real * real -> real
+	getAltitudeDifference(pressure, temperature) == (
+		let scaling = pressure/basePressure in
+			let temp = temperature + CelciusToKelvin in 
+				153.8462 * temp * (1.0 - MATH`exp(0.190259 * MATH`log(scaling)))
+	)
+	pre pressure > 0
+
+values
+	-- TODO: Shared design parameters:
+	basePressure : real = 101325; -- Sea level atmospheric pressure in Pascal
+	CelciusToKelvin : real = 273.15;
+	
+end AP_Baro

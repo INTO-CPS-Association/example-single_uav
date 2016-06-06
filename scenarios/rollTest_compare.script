@@ -1,0 +1,15 @@
+when time = 0.1 do
+(de real pilote_desired_throttle := 650;);
+
+when time = 1 do
+(de real rollTarget := -3000;);
+
+when time = 2 do
+(de real rollTarget := 0;);
+
+when time = 3 do
+(de real rollTarget := 3000;);
+
+when time = 4 do
+(de real rollTarget := 0;);
+
