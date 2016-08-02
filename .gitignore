@@ -1,0 +1,4 @@
+**/*.vdmrt.covtbl
+**/*.vdmrtcov
+**/*.logrt*
+**/*.dlaunch

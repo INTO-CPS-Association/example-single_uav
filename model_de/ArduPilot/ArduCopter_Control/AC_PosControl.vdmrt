@@ -34,6 +34,17 @@ instance variables
 	
 	dt : real := ArduCopter`MAIN_LOOP_RATE;
 	
+	accelCms: real; -- max horizontal acceleration in cm/s/s
+	recalcLeashXy: bool := true; -- True if we should recalculate the xy axis leash length
+	accelZCms : real; -- max vertical acceleration in cm/s/s
+	recalcLeashZ: bool := true; -- True if we should recalculate the z axis leash length
+	pPosXy : AC_P;
+	leash : real := POSCONTROL_LEASH_LENGTH_MIN; -- horizontal leash length in cm.  target will never be further than this distance from the vehicle
+	leashUpZ : real; -- returns vertical leash length in cm
+	leashDownZ : real; -- returns vertical leash length in cm
+	resetDesiredVelToPos : bool := true; -- true if we should reset the rate_to_accel_xy step
+
+
 operations
 	public AC_PosControl : AP_AHRS * AP_InertialNav_NavEKF * AP_Motors * AC_AttitudeControl ==> AC_PosControl
 	AC_PosControl(ahr, nav, motor, attControl) ==
@@ -46,6 +57,9 @@ operations
 		velErrorFilter.setCutoffFrequency(dt, POSCONTROL_VEL_ERROR_CUTOFF_FREQ);
 		accelErrorFilter.setCutoffFrequency(dt, POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ);
 	);
+
+	public getDt : () ==> real
+	getDt() == return dt;
 
 	-- set climb rate target in cms
 	public setAltTargetFromClimbRate : real ==> ()
@@ -112,6 +126,120 @@ operations
 		throttleHover := throttle;
 	);
 	
+	public setSpeedXY : real ==> ()
+	setSpeedXY(speed) == (
+		return
+	);
+	-- set horizontal acceleration in cm/s/s
+	public setAccelXy : real ==> ()
+	setAccelXy(accel) == (
+		accelCms := accel;
+		recalcLeashXy := true;
+		calcLeashLengthXy();
+	);
+	
+	-- calculates the horizontal leash length given a maximum speed, acceleration
+ 	-- 		should be called whenever the speed, acceleration or position kP is modified
+	private calcLeashLengthXy : () ==> ()
+	calcLeashLengthXy() == (
+		leash := calcLeashLength(POSCONTROL_SPEED, POSCONTROL_ACCEL_XY, pPosXy.getKp());
+		recalcLeashXy := false;
+		return;
+	);
+	
+	private calcLeashLength : real * real * real ==> real
+	calcLeashLength(speedCms, accelCms, kP) == (
+		let leashLength = (
+			if speedCms <= accelCms / kP
+			then speedCms / kP
+			else (accelCms / (2.0*kP*kP)) + (speedCms * speedCms / (2.0*accelCms))) in
+				if leashLength < POSCONTROL_LEASH_LENGTH_MIN
+				then return POSCONTROL_LEASH_LENGTH_MIN
+				else return leashLength
+	);
+	
+	-- Only here because of interface. Value is POSCONTROL_JERK_LIMIT_CMSSS
+	public setJerkXyToDefault : () ==> ()
+	setJerkXyToDefault() ==
+	(	
+		skip;
+	);
+	
+	public setAccelZ : real ==> ()
+	setAccelZ(accelCms) ==
+	(
+		if(abs(POSCONTROL_ACCEL_Z - accelCms) > 1.0)
+		then (
+			accelZCms := accelCms;
+			recalcLeashZ := true;
+			calcLeashLengthZ();
+			)
+	);
+	
+	private calcLeashLengthZ : () ==> ()
+	calcLeashLengthZ() == (
+		if recalcLeashZ
+		then
+			leashUpZ := calcLeashLength(POSCONTROL_SPEED_UP, accelZCms, pPosZ.getKp());
+			leashDownZ := calcLeashLength(-POSCONTROL_SPEED_DOWN,accelZCms, pPosZ.getKp());
+			recalcLeashZ := false;
+	);	
+	
+	public setJerkXY : real ==> ()
+	setJerkXY(jerk) == (
+		return
+	);
+	-- run the horizontal position controller
+	public updateXyController : real ==> ()
+	updateXyController(defaultEkfNavVelGainScaler) == (
+			-- check if xy leash needs to be recalculated
+			calcLeashLengthXy();
+			-- translate any adjustments from pilot to loiter target
+			desiredVelToPos();
+			
+			-- run position controller's position error to desired velocity step
+			posToRateXy(defaultEkfNavVelGainScaler);
+			-- run position controller's velocity to acceleration step
+			
+			-- run position controller's acceleration to lean angle step
+	);
+	
+	-- move position target using desired velocities
+	private desiredVelToPos : () ==> ()
+	desiredVelToPos() == (
+		if resetDesiredVelToPos
+		then
+			resetDesiredVelToPos := false
+		else (
+			positionTarget.x := positionTarget.x + velocityDesired.x * dt;
+			positionTarget.y := positionTarget.y + velocityDesired.y * dt;
+		);
+	);
+	
+	private posToRateXy : real ==> ()
+	posToRateXy(ekfNavVelGainScaler) == (
+	let 
+		currentPosition = insNav.getPosition(), 
+		kP = ekfNavVelGainScaler * pPosXy.getKp() -- scale gains to compensate for noisy optical flow measurement in the EKF 
+		in (
+			positionError.x := positionTarget.x - currentPosition.x;
+			positionError.y := positionTarget.y - currentPosition.y;
+			-- constrain target position to within reasonable distance of current location
+			let distanceToTarget 
+		)
+	);
+	
+	
+		public getRoll : () ==> real
+	getRoll() ==
+		return rollTarget;
+	
+		public getPitch : () ==> real
+	getPitch() ==
+		return pitchTarget;
+
+	
+	
 values
 	-- Controllers: 
 	ALT_HOLD_P = 1;
@@ -126,5 +254,12 @@ values
 	
 	POSCONTROL_VEL_ERROR_CUTOFF_FREQ = 4;
 	POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ = 2;
+	-- Values below are default values from -- https://github.com/ArduPilot/ardupilot/blob/8681911a0b3676cf676933e8e0610b609440ba61/libraries/AC_AttitudeControl/AC_PosControl.h
+	POSCONTROL_JERK_LIMIT_CMSSS = 1700.0; -- default jerk limit on horizontal acceleration (unit: m/s/s/s)
+	POSCONTROL_SPEED = 500.0; -- default horizontal acceleration in cm/s/s.
+	POSCONTROL_ACCEL_XY = 100.0; -- default horizontal acceleration in cm/s/s.
+	POSCONTROL_LEASH_LENGTH_MIN = 100.0; -- minimum leash lengths in cm
+	POSCONTROL_SPEED_UP = 250.0; -- default climb rate in cm/s
+	POSCONTROL_SPEED_DOWN = -150.0; -- default descent rate in cm/s
 	
 end AC_PosControl

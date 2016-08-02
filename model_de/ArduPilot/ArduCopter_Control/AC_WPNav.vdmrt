@@ -1,0 +1,35 @@
+class AC_WPNav
+types
+-- TODO Define types here
+values
+	-- Todo ctha: Default loiter speed values 
+	-- https://github.com/ArduPilot/ardupilot/blob/0eac5a5c8fd3161aadcea354827cf4861e209602/libraries/AC_WPNav/AC_WPNav.h
+	loiterSpeedCms : real = 500.0;
+	loiterSpeedMinCms : real = 100.0;
+	loiterAccelCms : real = 250.0;
+	loiterAccelMinCms : real = 25.0;
+	loiterJerkMaxCmsss : real = 1000.0;
+	wpAccelCms = 100.0; -- Corresponds to WPNAV-ACCELERATION
+	WPNAV_WP_ACCEL_Z_DEFAULT = 100.0; -- default vertical acceleration between waypoints in cm/s/s
+	wpAccelZ : real = WPNAV_WP_ACCEL_Z_DEFAULT;
+	defaultEkfNavVelGainScaler : real = 1.0; --from AC_WPNav
+	
+instance variables
+	posControl : AC_PosControl;
+
+operations
+	-- todo ctha: Ignoring discontinuities
+	public updateWpnav : () ==> ()
+	updateWpnav() == (
+		let dt = posControl.getDt() in
+			posControl.setAccelXy(wpAccelCms);
+			posControl.setJerkXyToDefault();
+			posControl.setAccelZ(wpAccelZ);
+			posControl.updateXyController(defaultEkfNavVelGainScaler);
+	);
+
+functions
+
+traces
+
+end AC_WPNav

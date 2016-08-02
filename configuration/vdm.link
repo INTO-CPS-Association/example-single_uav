@@ -13,6 +13,8 @@ input accelerometerY = ArduPilot.arduCopter.ins.accelY;
 input accelerometerZ = ArduPilot.arduCopter.ins.accelZ;
 
 input gpsZ = ArduPilot.arduCopter.gps.locationAlt;
+input gpsX = ArduPilot.arduCopter.gps.locationLat;
+input gpsY = ArduPilot.arduCopter.gps.locationLong;
 input gpsVelX = ArduPilot.arduCopter.gps.velocityX;
 input gpsVelY = ArduPilot.arduCopter.gps.velocityY;
 input gpsVelZ = ArduPilot.arduCopter.gps.velocityZ;
@@ -32,3 +34,5 @@ model pitchTarget = ArduPilot.arduCopter.fltMode.pitchTarget;
 model yawRateTarget = ArduPilot.arduCopter.fltMode.yawRateTarget;
 model climbRateTarget = ArduPilot.arduCopter.fltMode.climbRateTarget;
 model pilote_desired_throttle = ArduPilot.arduCopter.fltMode.pilote_desired_throttle;
+-- model pilote_desired_forward =
+-- model pilote_desired_right =  

@@ -4,6 +4,7 @@ types
 	public MODE = <ACRO> | <STABILIZE> | <ALT_HOLD> | <AUTO> | <CIRCLE> | <LOITER> | <LAND> |
 					<GUIDED> | <RTL> | <DRIFT> | <SPORT> | <FLIP> | <AUTOTUNE> | <POSHOLD>
 instance variables
+	wpNav: AC_WPNav;
 	attitudeControl : AC_AttitudeControl;
 	posControl : AC_PosControl;
 	controlMode: MODE := <STABILIZE>; --<ALT_HOLD>;
@@ -12,11 +13,21 @@ instance variables
 	pitchTarget : real := 0;
 	yawRateTarget : real := 0;
 	climbRateTarget : real := 0;
+	latRateTarget : real := 0;
 	
 	pilote_desired_throttle : real := 0;
 	
 	-- smoothing_gain : a number from 1 to 50 with 1 being sluggish and 50 being very crisp
 	smoothingGain : real := 38;
+	
+	--Todo Ctha: Verify ekf values below. 
+	--Values chosen from https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_AHRS/AP_AHRS_NavEKF.cpp#L1083
+	--and https://github.com/ArduPilot/ardupilot/blob/567d5cdbe6c92e71a17ea29f74fcb6fb03b31b18/libraries/AP_NavEKF2/AP_NavEKF2_Outputs.cpp#L317
+	ekfGndSpdLimit : real := 400.0; 
+	ekfNavVelGainScaler: real := 1.0;
+	
+	guidedPosTarget : Vector`Vector3; -- position target (used by posvel controller only)
+	guidedVelTargetCms : Vector`Vector3; -- velocity target (used by velocity controller and posvel controller)
 
 operations 
 	public FlightMode : AC_AttitudeControl * AC_PosControl ==> FlightMode
@@ -42,6 +53,21 @@ operations
 		controlMode := mode;
 	); 
 	
+	private loiterUpdate : () ==> ()
+	loiterUpdate() == (
+	wpNav.updateLoiter(ekfGndSpdLimit, ekfNavVelGainScaler);
+	
+	);
+	
+	-- A lot of stuff has been abstracted from https://github.com/ArduPilot/ardupilot/blob/master/ArduCopter/control_guided.cpp#L361
+	private guidedRun : () ==> ()
+	guidedRun() == (
+		wpNav.updateWpnav();
+		posControl.updateZController();
+		attitudeControl.update(posControl.getRoll(),posControl.getPitch(),getAutoHeading(),smoothingGain);
+	);
+	
+	-- Keeps the UAV in a stable altitude position.
 	private altholdUpdate : () ==> ()
 	altholdUpdate() ==
 	(
@@ -49,7 +75,7 @@ operations
 		posControl.setAltTargetFromClimbRate(climbRateTarget);
         posControl.updateZController();
 	);
-
+	-- Keeps the UAV in a stable oriented position. Does not keep a given altitude.
 	private stabilizaUpdate : () ==> ()
 	stabilizaUpdate() ==
 	(
