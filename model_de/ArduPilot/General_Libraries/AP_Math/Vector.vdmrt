@@ -8,6 +8,12 @@ types
 	
 	
 operations
+
+	public static length: Vector3 ==> real
+	length(vector) == (
+		return AP_Math`safeSqrt(vector.x**2 + vector.y**2 + vector.z**2);
+	);
+
 	-- TODO: Make these operations as functions
 	public static add: set of Vector3 ==> Vector3
 	add(vectors) == (
@@ -24,6 +30,18 @@ operations
 	public static add: Vector3 * real ==> Vector3
 	add(vector, scalar) == 
 		return mk_Vector3(vector.x + scalar, vector.y + scalar, vector.z + scalar);
+	
+	public static subtract: set of Vector3 ==> Vector3
+	subtract(vectors) == (
+		dcl res : Vector3 := mk_Vector3(0,0,0);
+		for all vec in set vectors do
+		(
+			res.x := res.x - vec.x;
+			res.y := res.y - vec.y;
+			res.z := res.z - vec.z;
+		);
+		return res;
+	);
 	
 	public static subtract: Vector3 * real ==> Vector3
 	subtract(vector, scalar) == 

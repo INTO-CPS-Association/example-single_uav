@@ -11,6 +11,8 @@ instance variables
 	angleEfTarget : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
 	rateBfTarget : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
 	rateEfDesired : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	--TODO CTHA: Initialize attitudeTargetEulerAngle
+	attitudeTargetEulerAngle : Vector`Vector3;
 
 operations
 -- TODO: Should PID and P be instantiated in Parameters?
@@ -18,6 +20,7 @@ operations
 	AC_AttitudeControl_PID(ahr, motor) == (
 		ahrs := ahr;
 		motors := motor;
+		attitudeTargetEulerAngle := mk_Vector`Vector3(ahrs.roll,ahrs.pitch,ahrs.yaw);
 		
 		pAngleRoll := new AC_P(ROLL_P);
 		pAnglePitch := new AC_P(PITCH_P);
@@ -208,7 +211,12 @@ operations
 		--Yaw
 		rateBfTarget.z := pAngleYaw.getP(angleBfError.z);
 	);
-	
+	-- Return 321-intrinsic euler angles in centidegrees representing the rotation from NED earth frame to the
+	-- attitude controller's target attitude.
+	public getAttitudeTargetEulerCd : () ==> Vector`Vector3
+	getAttitudeTargetEulerCd() == (
+		return Vector`multiply(attitudeTargetEulerAngle,AP_Math`degrees(100.0));
+	) 
 
 values	
 	-- Rate controllers:

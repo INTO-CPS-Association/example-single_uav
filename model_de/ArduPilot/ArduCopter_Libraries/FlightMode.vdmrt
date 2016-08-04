@@ -30,18 +30,25 @@ instance variables
 	guidedVelTargetCms : Vector`Vector3; -- velocity target (used by velocity controller and posvel controller)
 
 operations 
-	public FlightMode : AC_AttitudeControl * AC_PosControl ==> FlightMode
-	FlightMode(att, pos) == (
+	public FlightMode : AC_AttitudeControl * AC_PosControl * AC_WPNav ==> FlightMode
+	FlightMode(att, pos, nav) == (
 		attitudeControl := att;
 		posControl := pos;
+		wpNav := nav;
+	);
+	
+	private guidedRunStart : () ==> ()
+	guidedRunStart() ==
+	(
+		wpNav.wpAndSplineInit();
 	);
 	
 	public update : () ==> ()
-	update() == (
-		
+		update() == (		
 		cases controlMode :
 		<ALT_HOLD> -> altholdUpdate(),
-		<STABILIZE> -> stabilizaUpdate()
+		<STABILIZE> -> stabilizaUpdate(),
+		<GUIDED> -> guidedRun()
 		end
 	);
 	
@@ -53,18 +60,25 @@ operations
 		controlMode := mode;
 	); 
 	
-	private loiterUpdate : () ==> ()
-	loiterUpdate() == (
-	wpNav.updateLoiter(ekfGndSpdLimit, ekfNavVelGainScaler);
-	
+	-- guided_set_destination - sets guided mode's target destination
+	public guidedSetDestination : Vector`Vector3  ==> ()
+	guidedSetDestination(destination) == (
+		guidedRunStart();
+		wpNav.setWpOriginAndDestination(posControl.getCurrentPosition(),destination);	
 	);
 	
-	-- A lot of stuff has been abstracted from https://github.com/ArduPilot/ardupilot/blob/master/ArduCopter/control_guided.cpp#L361
+	-- Some constructs was abstracted from https://github.com/ArduPilot/ardupilot/blob/master/ArduCopter/control_guided.cpp#L361
 	private guidedRun : () ==> ()
 	guidedRun() == (
 		wpNav.updateWpnav();
 		posControl.updateZController();
 		attitudeControl.update(posControl.getRoll(),posControl.getPitch(),getAutoHeading(),smoothingGain);
+	);
+	
+	private getAutoHeading : () ==> real
+	getAutoHeading() ==
+	(
+		return wpNav.getYaw();
 	);
 	
 	-- Keeps the UAV in a stable altitude position.

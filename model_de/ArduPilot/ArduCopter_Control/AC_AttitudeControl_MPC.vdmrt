@@ -78,6 +78,13 @@ operations
 		return control*3000; --100 Hz
 	);
 	
+		-- Return 321-intrinsic euler angles in centidegrees representing the rotation from NED earth frame to the
+	-- attitude controller's target attitude.
+	public getAttitudeTargetEulerCd : () ==> Vector`Vector3
+	getAttitudeTargetEulerCd() == (
+		return mk_Vector`Vector3(0.0,0.0,0.0);
+	) 
+	
 values
 	p : nat = 3; -- Number of variables in control signal
 	

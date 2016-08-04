@@ -95,4 +95,8 @@ functions
 			0
 		else
 			MATH`sqrt(x);
+			
+	public static norm : real * real -> real
+	norm(x,y) ==
+		MATH`sqrt(x**2+y**2);
 end AP_Math

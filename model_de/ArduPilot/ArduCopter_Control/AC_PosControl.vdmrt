@@ -19,11 +19,14 @@ instance variables
 	accelTarget		: Vector`Vector3 := mk_Vector`Vector3(0,0,0);
 	accelError		: Vector`Vector3 := mk_Vector`Vector3(0,0,0);
 	accelFeedForward: Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	accelTargetJerkLimited : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- acceleration target jerk limited to 100deg/s/s
 	
 	-- Controllers
 	pPosZ : AC_P := new AC_P(ALT_HOLD_P);
 	pVelZ : AC_P := new AC_P(VEL_Z_P);
+	pPosXy : AC_P := new AC_P(POS_XY_P);
 	pidAccelZ : AC_PID := new AC_PID(ACCEL_Z_P, ACCEL_Z_I, ACCEL_Z_D, ACCEL_Z_IMAX, ACCEL_Z_FILT_HZ, ArduCopter`MAIN_LOOP_RATE);
+	piVelXy : AC_PI_2D := new AC_PI_2D();
 	
 	--pPosXY : AC_P;
 	--pidVelXY : AC_PID;
@@ -31,17 +34,35 @@ instance variables
 	-- Filters 
 	velErrorFilter : LowPassFilter := new LowPassFilter();
 	accelErrorFilter : LowPassFilter := new LowPassFilter();
-	
+	accelTargetFilter : LowPassFilterVector := new LowPassFilterVector(); -- acceleration target filter
+	accelXyFiltHz : real := POSCONTROL_ACCEL_FILTER_HZ;
 	dt : real := ArduCopter`MAIN_LOOP_RATE;
 	
-	accelCms: real; -- max horizontal acceleration in cm/s/s
-	recalcLeashXy: bool := true; -- True if we should recalculate the xy axis leash length
-	accelZCms : real; -- max vertical acceleration in cm/s/s
-	recalcLeashZ: bool := true; -- True if we should recalculate the z axis leash length
-	pPosXy : AC_P;
+	accelCms: real := POSCONTROL_ACCEL_XY; -- max horizontal acceleration in cm/s/s
+
+	accelZCms : real := POSCONTROL_ACCEL_Z; -- max vertical acceleration in cm/s/s
+	
+	
 	leash : real := POSCONTROL_LEASH_LENGTH_MIN; -- horizontal leash length in cm.  target will never be further than this distance from the vehicle
 	leashUpZ : real; -- returns vertical leash length in cm
 	leashDownZ : real; -- returns vertical leash length in cm
+	
+	distanceToTarget: real;
+	linearDistance: real;
+	speedCms: real := POSCONTROL_SPEED; -- max horizontal speed in cm/s
+	rollTarget : real := 0.0; -- desired roll angle in centi-degrees calculated by position controller
+	pitchTarget : real := 0.0; -- desired roll pitch in centi-degrees calculated by position controller
+	accelXCmss : real;
+	accelYCmss : real;
+	jerkCmsss : real; -- max horizontal jerk in cm/s/s/s
+	speedDownCms : real := POSCONTROL_SPEED_DOWN; -- max descent rate in cm/s
+	speedUpCms : real := POSCONTROL_SPEED_UP; -- max climb rate in cm/s
+	
+	--flags
+	resetRateToAccelXy : bool := true; -- true if we should reset the rate_to_accel_z step
+	resetAccelToLeanXy : bool := true; -- true if we should reset the accel to lean angle step
+	recalcLeashXy: bool := true; -- True if we should recalculate the xy axis leash length
+	recalcLeashZ: bool := true; -- True if we should recalculate the z axis leash length
 	resetDesiredVelToPos : bool := true; -- true if we should reset the rate_to_accel_xy step
 
 
@@ -56,7 +77,55 @@ operations
 		
 		velErrorFilter.setCutoffFrequency(dt, POSCONTROL_VEL_ERROR_CUTOFF_FREQ);
 		accelErrorFilter.setCutoffFrequency(dt, POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ);
+		
+		-- set roll, pitch lean angle targets to current attitude
+		rollTarget := ahrs.roll;
+		pitchTarget := ahrs.pitch;
 	);
+	-- initialise the xy controller
+	public initXyController : () ==> ()
+	initXyController() ==
+	(
+	rollTarget := ahrs.roll;
+	pitchTarget := ahrs.pitch;
+	
+	leanAnglesToAccel();
+	piVelXy.setIntegrator(accelTarget);
+	
+	resetDesiredVelToPos := true;
+	resetRateToAccelXy := true;
+	resetAccelToLeanXy := true;
+	
+	
+	skip;
+	);
+	
+	private leanAnglesToAccel : () ==> ()
+	leanAnglesToAccel() ==
+	(
+		accelTarget.x := (AP_Math`GRAVITY_MSS * 100) * (-(ahrs.cosYaw * ahrs.sinPitch / AP_Math`max({ahrs.cosPitch,0.5})) - ahrs.sinYaw * ahrs.sinRoll / AP_Math`max({ahrs.cosRoll,0.5}));
+		accelTarget.y := (AP_Math`GRAVITY_MSS * 100) * (-(ahrs.sinYaw * ahrs.sinPitch / AP_Math`max({ahrs.cosPitch,0.5})) - ahrs.cosYaw * ahrs.sinRoll / AP_Math`max({ahrs.cosRoll,0.5}));
+	);
+	
+	
+	-- set_pos_target in cm from home
+	public setPosTarget : Vector`Vector3 ==> ()
+	setPosTarget(target) ==
+	(
+		positionTarget := target;
+	);
+	
+	public getPPosXy : () ==> AC_P
+	getPPosXy() == return pPosXy;
+	
+	public getLeashXy : () ==> real
+	getLeashXy() == return leash;
+	
+	public getLeashUpZ : () ==> real
+	getLeashUpZ() == return leashUpZ;
+	
+	public getLeashDownZ : () ==> real
+	getLeashDownZ() == return leashDownZ;
 
 	public getDt : () ==> real
 	getDt() == return dt;
@@ -74,7 +143,7 @@ operations
 	updateZController() == 
 	(
 		posToRateZ();
-		--IO`printf("Vel: %s, VelErr %s, Acc: %s, AccErr: %s.\n",[velocityTarget.z, velocityError.z,accelTarget.z, accelError.z]);
+		IO`printf("Vel: %s, VelErr %s, Acc: %s, AccErr: %s.\n",[velocityTarget.z, velocityError.z,accelTarget.z, accelError.z]);
 	);
 	
 	-- Position to rate control of altitude
@@ -126,21 +195,47 @@ operations
 		throttleHover := throttle;
 	);
 	
-	public setSpeedXY : real ==> ()
-	setSpeedXY(speed) == (
-		return
+	-- set horizontal speed maximum in cm/s
+	public setSpeedXy : real ==> ()
+	setSpeedXy(speed) == (
+		if abs(speed) > 1.0
+		then 
+		(
+			speedCms := speed;
+			recalcLeashXy := true;
+			calcLeashLengthXy();
+		);
 	);
+	
+	-- sets maximum climb and descent rates
+	public setSpeedZ : real * real ==> ()
+	setSpeedZ(speedDown, speedUp) ==
+	(
+		let speedDownAbs = -abs(speedDown) in
+			if abs(speedDownCms - speedDownAbs) > 1.0 or abs(speedUpCms-speedUp) > 1.0
+			then
+			(
+				speedDownCms := speedDownAbs;
+				speedUpCms := speedUp;
+				recalcLeashZ := true;
+				calcLeashLengthZ();
+			);
+	);
+	
 	-- set horizontal acceleration in cm/s/s
 	public setAccelXy : real ==> ()
 	setAccelXy(accel) == (
-		accelCms := accel;
-		recalcLeashXy := true;
-		calcLeashLengthXy();
+		if abs(accel) > 1.0
+		then (
+			accelCms := accel;
+			recalcLeashXy := true;
+			calcLeashLengthXy();
+		);
 	);
 	
 	-- calculates the horizontal leash length given a maximum speed, acceleration
  	-- 		should be called whenever the speed, acceleration or position kP is modified
-	private calcLeashLengthXy : () ==> ()
+	public calcLeashLengthXy : () ==> ()
 	calcLeashLengthXy() == (
 		leash := calcLeashLength(POSCONTROL_SPEED, POSCONTROL_ACCEL_XY, pPosXy.getKp());
 		recalcLeashXy := false;
@@ -162,21 +257,21 @@ operations
 	public setJerkXyToDefault : () ==> ()
 	setJerkXyToDefault() ==
 	(	
-		skip;
+		jerkCmsss := POSCONTROL_JERK_LIMIT_CMSSS;
 	);
 	
 	public setAccelZ : real ==> ()
-	setAccelZ(accelCms) ==
+	setAccelZ(accelCmsPar) ==
 	(
-		if(abs(POSCONTROL_ACCEL_Z - accelCms) > 1.0)
+		if(abs(POSCONTROL_ACCEL_Z - accelCmsPar) > 1.0)
 		then (
-			accelZCms := accelCms;
+			accelZCms := accelCmsPar;
 			recalcLeashZ := true;
 			calcLeashLengthZ();
-			)
+			);
 	);
 	
-	private calcLeashLengthZ : () ==> ()
+	public calcLeashLengthZ : () ==> ()
 	calcLeashLengthZ() == (
 		if recalcLeashZ
 		then
@@ -185,10 +280,11 @@ operations
 			recalcLeashZ := false;
 	);	
 	
-	public setJerkXY : real ==> ()
-	setJerkXY(jerk) == (
-		return
+	public getCurrentPosition: () ==> Vector`Vector3
+	getCurrentPosition() == (
+		return insNav.getPosition();
 	);
+	
 	-- run the horizontal position controller
 	public updateXyController : real ==> ()
 	updateXyController(defaultEkfNavVelGainScaler) == (
@@ -200,8 +296,115 @@ operations
 			-- run position controller's position error to desired velocity step
 			posToRateXy(defaultEkfNavVelGainScaler);
 			-- run position controller's velocity to acceleration step
-			
+			rateToAccelXy(defaultEkfNavVelGainScaler);
 			-- run position controller's acceleration to lean angle step
+			accelToLeanAngles(defaultEkfNavVelGainScaler);
+	);
+	
+	-- horizontal desired acceleration to lean angles
+	private accelToLeanAngles : real ==> ()
+	accelToLeanAngles(ekfNavVelGainScaler) ==
+	(
+		dcl accelTotal: real;
+		dcl accelRight : real;
+		dcl accelForward: real;
+		dcl leanAngleMax : real := attitudeControl.leanAngleMax();
+		dcl accelMax :real :=  POSCONTROL_ACCEL_XY_MAX;
+		
+		-- scale desired acceleration if it's beyond acceptable limit
+		accelTotal := AP_Math`norm(accelTarget.x, accelTarget.y);
+		if accelTotal > accelMax and accelTotal > 0.0
+		then
+		(
+			accelTarget.x := accelMax * accelTarget.x/accelTotal;
+			accelTarget.y := accelMax * accelTarget.y/accelTotal;
+		);
+		
+		-- reset accel to current desired acceleration
+		if resetAccelToLeanXy
+		then
+		(
+			accelTargetJerkLimited.x := accelTarget.x;
+			accelTargetJerkLimited.y := accelTarget.y;
+			accelTargetFilter.reset();
+			resetAccelToLeanXy := false;
+		);
+		-- apply jerk limit of 17 m/s^3 - equates to a worst case of about 100 deg/sec/sec
+		let maxDeltaAccel = dt * jerkCmsss in
+		(
+			let accelIn = mk_Vector`Vector3(accelTarget.x,accelTarget.y,0), 
+					accelChange = 
+						(
+								let accelChangeTemp = Vector`subtract({accelIn,accelTargetJerkLimited}),
+										accelChangeLength = Vector`length(accelChangeTemp) in
+								(	
+									if accelChangeLength > maxDeltaAccel
+									then
+										Vector`multiply(accelChangeTemp, maxDeltaAccel/accelChangeLength)
+									else
+										accelChangeTemp
+								)
+						) 
+				in (
+						accelTargetJerkLimited := Vector`add({accelTargetJerkLimited,accelChange});
+						-- lowpass filter on NE accel
+						accelTargetFilter.setCutoffFrequency(AP_Math`min({accelXyFiltHz,5.0*ekfNavVelGainScaler}));
+						let accelTargetFiltered = accelTargetFilter.apply(accelTargetJerkLimited, dt) in
+						(
+							accelForward := accelTargetFiltered.x * ahrs.cosYaw + accelTargetFiltered.y*ahrs.sinYaw;
+							accelRight := accelTargetFiltered.x * ahrs.sinYaw + accelTargetFiltered.y*ahrs.cosYaw;
+							
+							-- update angle targets that will be passed to stabilize controller
+							pitchTarget := AP_Math`constrain(MATH`atan(-accelForward/(AP_Math`GRAVITY_MSS * 100))*(18000/MATH`pi),-leanAngleMax,leanAngleMax);
+							let cosPitchTarget = MATH`cos(pitchTarget*MATH`pi/18000) in
+								rollTarget := AP_Math`constrain(MATH`atan(accelRight*cosPitchTarget/(AP_Math`GRAVITY_MSS*100))*(18000/MATH`pi),-leanAngleMax,leanAngleMax);
+						);					
+					);
+		);		
+	);
+	
+	private rateToAccelXy : real ==> ()
+	rateToAccelXy(ekfNavVelGainScaler) ==
+	(
+		dcl velocityCurrent : Vector`Vector3 := insNav.getVelocity();
+		dcl velXyP : Vector`Vector3,
+				velXyI : Vector`Vector3;
+				
+			if resetRateToAccelXy
+			then
+			(
+				velocityLast.x := velocityTarget.x;
+				velocityLast.y := velocityTarget.y;
+				resetRateToAccelXy := false;
+			);
+
+			-- feed forward desired acceleration calculation		
+			accelFeedForward.x := (velocityTarget.x - velocityLast.x)/dt;
+			accelFeedForward.y := (velocityTarget.y - velocityLast.y)/dt;
+			
+			-- store this iteration's velocities for the next iteration
+			velocityLast.x := velocityTarget.x;
+			velocityLast.y := velocityTarget.y;
+			
+			-- calculate velocity error
+			velocityError.x := velocityTarget.x - velocityCurrent.x;
+			velocityError.y := velocityTarget.y - velocityCurrent.y;
+	
+			-- call pi controller
+			piVelXy.setInput(velocityError);
+			
+			-- get p
+			velXyP := piVelXy.getP();
+			
+			-- update i term if we have not hit the accel or throttle limits OR the i term will reduce
+			-- TODO CTHA: Simplified
+			velXyI := piVelXy.getI();
+			
+			-- combine feed forward accel with PID output from velocity error and scale PID output to compensate for optical flow measurement induced EKF noise
+			accelTarget.x := accelFeedForward.x + (velXyP.x + velXyI.x) * ekfNavVelGainScaler;
+			accelTarget.y := accelFeedForward.y + (velXyP.y + velXyI.y) * ekfNavVelGainScaler;
+	
+		IO`println("IMPLEMENT rateToAccelXy");
 	);
 	
 	-- move position target using desired velocities
@@ -216,6 +419,8 @@ operations
 		);
 	);
 	
+	-- horizontal position error to velocity controller
+	-- converts position (_pos_target) to target velocity (_vel_target)
 	private posToRateXy : real ==> ()
 	posToRateXy(ekfNavVelGainScaler) == (
 	let 
@@ -225,10 +430,48 @@ operations
 			positionError.x := positionTarget.x - currentPosition.x;
 			positionError.y := positionTarget.y - currentPosition.y;
 			-- constrain target position to within reasonable distance of current location
-			let distanceToTarget 
-		)
-	);
-	
+			distanceToTarget := AP_Math`safeSqrt(positionError.x**2 + positionError.y**2); 
+			if distanceToTarget > leash and distanceToTarget > 0.0
+			then (
+				positionTarget.x := currentPosition.x + leash * positionError.x/distanceToTarget;
+				positionTarget.y := currentPosition.y + leash * positionError.y/distanceToTarget;
+				-- re-calculate distance error
+				positionError.x := positionTarget.x - currentPosition.x;
+				positionError.y := positionTarget.y - currentPosition.y;
+				distanceToTarget := leash;
+			);
+			-- calculate the distance at which we swap between linear and sqrt velocity response
+			linearDistance := accelCms/(2.0*kP*kP);
+			if distanceToTarget > 2.0*linearDistance
+			then
+			(
+				-- velocity response grows with the square root of the distance
+				dcl velSqrt : real := AP_Math`safeSqrt(2.0 * accelCms*(distanceToTarget-linearDistance));
+				velocityTarget.x := velSqrt * positionError.x/distanceToTarget;
+				velocityTarget.y := velSqrt * positionError.y/distanceToTarget;
+			)
+			else
+			(
+				-- velocity response grows linearly with the distance
+				velocityTarget.x := pPosXy.getKp() * positionError.x;
+				velocityTarget.y := pPosXy.getKp() * positionError.y;
+			);
+			
+			-- Choosing the mode XY_MODE_POS_AND_VEL_FF thereby ignored pilot
+			-- add velocity feed-forward
+			velocityTarget.x := velocityTarget.x + velocityDesired.x;
+			velocityTarget.y := velocityTarget.y + velocityDesired.y;
+				
+			-- scale velocity within speed limit
+			let velocityTotal : real = AP_Math`safeSqrt(velocityTarget.x**2 + velocityTarget.y**2) in
+				if velocityTotal > speedCms
+				then
+				(
+					velocityTarget.x := speedCms * velocityTarget.x/velocityTotal;
+					velocityTarget.y := speedCms * velocityTarget.y/velocityTotal;
+				);		
+		);
+	);	
 	
 		public getRoll : () ==> real
 	getRoll() ==
@@ -236,9 +479,7 @@ operations
 	
 		public getPitch : () ==> real
 	getPitch() ==
-		return pitchTarget;
-
-	
+		return pitchTarget;	
 	
 values
 	-- Controllers: 
@@ -248,18 +489,21 @@ values
 	ACCEL_Z_I = 1;
 	ACCEL_Z_D = 0;
 	ACCEL_Z_IMAX = 800; 
-	ACCEL_Z_FILT_HZ = 20;
-	
-	POSCONTROL_ACCEL_Z = 250;
+	ACCEL_Z_FILT_HZ = 20;	
+	POS_XY_P = 1;
 	
 	POSCONTROL_VEL_ERROR_CUTOFF_FREQ = 4;
 	POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ = 2;
+	
 	-- Values below are default values from -- https://github.com/ArduPilot/ardupilot/blob/8681911a0b3676cf676933e8e0610b609440ba61/libraries/AC_AttitudeControl/AC_PosControl.h
+	POSCONTROL_ACCEL_Z = 250; -- default vertical acceleration in cm/s/s.
 	POSCONTROL_JERK_LIMIT_CMSSS = 1700.0; -- default jerk limit on horizontal acceleration (unit: m/s/s/s)
-	POSCONTROL_SPEED = 500.0; -- default horizontal acceleration in cm/s/s.
 	POSCONTROL_ACCEL_XY = 100.0; -- default horizontal acceleration in cm/s/s.
+	POSCONTROL_ACCEL_XY_MAX = 980.0;  -- max horizontal acceleration in cm/s/s that the position velocity controller will ask from the lower accel controller
 	POSCONTROL_LEASH_LENGTH_MIN = 100.0; -- minimum leash lengths in cm
+	POSCONTROL_SPEED = 500.0; -- default horizontal acceleration in cm/s/s.
 	POSCONTROL_SPEED_UP = 250.0; -- default climb rate in cm/s
 	POSCONTROL_SPEED_DOWN = -150.0; -- default descent rate in cm/s
+	POSCONTROL_ACCEL_FILTER_HZ = 2.0; --low-pass filter on acceleration (unit: hz)
 	
 end AC_PosControl

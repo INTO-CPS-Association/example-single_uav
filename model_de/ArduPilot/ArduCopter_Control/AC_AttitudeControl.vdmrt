@@ -11,6 +11,9 @@ operations
 	public rate_controller_run : () ==> ()
 	rate_controller_run() == is subclass responsibility;
 	
+	public getAttitudeTargetEulerCd : () ==> Vector`Vector3
+	getAttitudeTargetEulerCd() == is subclass responsibility;
+	
 	------------- THROTTLE ----------------
 	
 	public setThrottleOut : real * bool ==> ()
@@ -19,6 +22,14 @@ operations
 			motors.setThrottle(getAngleBoost(throttleOut))
 		else
 			motors.setThrottle(throttleOut);
+	
+	-- Value chosen because of
+	-- https://github.com/ArduPilot/ardupilot/blob/388b7ad6bdcbbeb530533c8d9d90c39e31d89a34/ArduPlane/quadplane.cpp#L26 
+	public leanAngleMax : () ==> real
+	leanAngleMax() ==
+	(
+		return 3000;
+	);
 	
 	-- Returns throttle including compensation for roll and pitch angles! 
 	getAngleBoost: real ==> real
@@ -32,5 +43,8 @@ operations
 		
 		return (throttlePwm-min_throttle)*inverted_factor*boost_factor + min_throttle;
 	);
+	
+
+	
 
 end AC_AttitudeControl

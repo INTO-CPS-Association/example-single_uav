@@ -16,6 +16,7 @@ instance variables
 	navigation :	Navigation;
 	attitude : 		Attitude;
 	battMon : 		AP_BattMonitor;
+	wpNavigation: AC_WPNav;
 	
 operations
 	public ArduCopter: () ==> ArduCopter
@@ -41,9 +42,14 @@ operations
 			attController := new AC_AttitudeControl_MPC(ahrs, motors); -- MPC attitude controller
 		
 		posController := new AC_PosControl(ahrs, insNav, motors, attController);
+		
+		
 
 		-- ArduCopter pde files:
-		fltMode := new FlightMode(attController, posController);
+		wpNavigation := new AC_WPNav(posController, insNav, attController);
+		fltMode := new FlightMode(attController, posController, wpNavigation);
+		fltMode.setMode(<GUIDED>);
+		fltMode.guidedSetDestination(mk_Vector`Vector3(5,5,5));
 		posVec := new PositionVector(ahrs, insNav);
 		navigation := new Navigation(fltMode, posVec, insNav, ahrs); 
 		attitude := new Attitude(posController, motors, insNav);

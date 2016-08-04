@@ -1,0 +1,92 @@
+class AC_PI_2D
+types
+-- TODO Define types here
+values
+	AC_PID_FILT_HZ_MIN = 0.01;
+instance variables
+	kp : real;
+	ki : real;
+	
+	iMax : real;
+	filtHz : real := 0;
+	alpha: real := 0;
+	
+	dt : real; -- seconds
+	integrator : Vector`Vector3;
+	derivative : real;
+	
+	input : Vector`Vector3;
+	
+	resetFilter : bool;
+	
+operations
+	public AC_PI_2D : real * real * real * real * real ==> AC_PI_2D
+	AC_PI_2D(p,i,imax,filterHz,timestep) ==
+	(
+		kp := p;
+		ki := i;
+		iMax := imax;
+		dt := timestep;
+		derivative := 0;
+		integrator := mk_Vector`Vector3(0,0,0);
+		input := mk_Vector`Vector3(0,0,0);
+		setFiltHz(filterHz);
+		resetFilter := true;
+	); 
+	
+	public getI : () ==> Vector`Vector3
+	getI() ==
+	(
+		integrator := Vector`add({integrator, Vector`multiply(input,ki*dt)});
+		let integratorLength = Vector`length(integrator) in
+			if integratorLength > iMax and integratorLength > 0
+			then 
+			(
+				integrator := Vector`multiply(integrator, iMax/integratorLength);
+				return integrator
+			)
+			else
+			return mk_Vector`Vector3(0,0,0);
+	);
+	
+	public getP : () ==> Vector`Vector3
+	getP() == return Vector`multiply(input, kp);
+	
+	public setInput : Vector`Vector3 ==> ()
+	setInput(inp) == (
+		if resetFilter
+		then
+		(
+			resetFilter := false;
+			input := inp;
+		);
+		
+		let inputFiltChange = Vector`multiply(Vector`subtract({inp,input}),alpha) in
+			input := Vector`add({input,inputFiltChange});
+	);
+	
+	public setIntegrator : Vector`Vector3 ==> ()
+	setIntegrator(intg) ==
+		integrator := intg;
+
+	setFiltHz: nat ==> ()
+	setFiltHz(hz) == (
+		filtHz := hz;
+		
+		if filtHz < AC_PID_FILT_HZ_MIN then
+			filtHz := AC_PID_FILT_HZ_MIN; 
+		
+		calcAlpha();	
+	);
+	
+	calcAlpha: () ==> ()
+	calcAlpha() == (
+		let rc = 1/(2*MATH`pi*filtHz) in
+			alpha := dt/(dt+rc);
+	);
+-- TODO Define operations here
+functions
+-- TODO Define functiones here
+traces
+-- TODO Define Combinatorial Test Traces here
+end AC_PI_2D

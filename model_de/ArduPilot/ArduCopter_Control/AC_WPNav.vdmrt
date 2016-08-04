@@ -2,31 +2,350 @@ class AC_WPNav
 types
 -- TODO Define types here
 values
-	-- Todo ctha: Default loiter speed values 
-	-- https://github.com/ArduPilot/ardupilot/blob/0eac5a5c8fd3161aadcea354827cf4861e209602/libraries/AC_WPNav/AC_WPNav.h
-	loiterSpeedCms : real = 500.0;
-	loiterSpeedMinCms : real = 100.0;
-	loiterAccelCms : real = 250.0;
-	loiterAccelMinCms : real = 25.0;
-	loiterJerkMaxCmsss : real = 1000.0;
-	wpAccelCms = 100.0; -- Corresponds to WPNAV-ACCELERATION
 	WPNAV_WP_ACCEL_Z_DEFAULT = 100.0; -- default vertical acceleration between waypoints in cm/s/s
+	WPNAV_WP_SPEED = 500.0;      -- default horizontal speed between waypoints in cm/s
+	WPNAV_WP_SPEED_UP = 250.0; -- default maximum climb velocity
+	WPNAV_WP_SPEED_DOWN = 150.0; -- default maximum descent velocity
+	WPNAV_WP_TRACK_SPEED_MIN = 50.0; -- minimum speed along track of the target point the vehicle is chasing in cm/s (used as target slows down before reaching destination)
+	WPNAV_WP_FAST_OVERSHOOT_MAX = 200.0; -- 2m overshoot is allowed during fast waypoints to allow for smooth transitions to next waypoint
+	WPNAV_WP_RADIUS = 200.0; -- default waypoint radius in cm
+	WPNAV_ACCELERATION = 100.0; -- defines the default velocity vs distant curve.  maximum acceleration in cm/s/s that position controller asks for from acceleration controller
 	wpAccelZ : real = WPNAV_WP_ACCEL_Z_DEFAULT;
 	defaultEkfNavVelGainScaler : real = 1.0; --from AC_WPNav
+	WPNAV_LEASH_LENGTH_MIN = 100.0; -- minimum leash lengths in cm
 	
 instance variables
+	attitudeControl : AC_AttitudeControl; 
 	posControl : AC_PosControl;
+	insNav : AP_InertialNav_NavEKF;
+	
+	wpAccelCms : real := WPNAV_ACCELERATION; -- horizontal acceleration in cm/s/s during missions
+	wpAccelZCms : real := WPNAV_WP_ACCEL_Z_DEFAULT; -- vertical acceleration in cm/s/s during missions
+	wpSpeedCms : real := WPNAV_WP_SPEED; -- maximum horizontal speed in cm/s during missions
+	wpSpeedDownCms : real := WPNAV_WP_SPEED_DOWN; -- descent speed target in cm/s
+	wpSpeedUpCms : real := WPNAV_WP_SPEED_UP; -- climb speed target in cm/s
+	yaw : real; -- heading according to yaw
+	origin : Vector`Vector3; -- starting point of trip to next waypoint in cm from home. Assigned to in setWpOriginAndDestination
+	destination: Vector`Vector3; -- target destination in cm from home (equivalent to next_WP). Assigned to in setWpOriginAndDestination
+	trackLength : real; -- distance in cm between origin and destination. Assigned to in setWpOriginAndDestination
+	posDeltaUnit : Vector`Vector3; -- each axis's percentage of the total track from origin to destination. Assigned to in setWpOriginAndDestination
+	trackDesired : real := 0.0; -- our desired distance along the track in cm. Assigned to in setWpOriginAndDestination
+	fastWaypoint : bool; -- true if we should ignore the waypoint radius and consider the waypoint complete once the intermediate target has reached the waypoint. Assigned to in setWpOriginAndDestination 
+	slowingDown : bool := false; --true when target point is slowing down before reaching the destination. Assigned to in setWpOriginAndDestination
+	reachedDestination: bool := false; -- true if we have reached the destination. Assigned to in setWpOriginAndDestination
+	newWpDestination: bool := true; -- true if we have just received a new destination.  allows us to freeze the position controller's xy feed forward
+	limitedSpeedXyCms : real := 0; -- horizontal speed in cm/s used to advance the intermediate target towards the destination.  used to limit extreme acceleration after passing a waypoint
+	
+	trackLeashLength : real := WPNAV_LEASH_LENGTH_MIN; --  leash length along track
+	trackAccel: real := WPNAV_ACCELERATION; -- acceleration along track
+	trackSpeed: real := WPNAV_WP_TRACK_SPEED_MIN; -- speed in cm/s along track
+	slowDownDist : real := 0.0; -- vehicle should begin to slow down once it is within this distance from the destination
 
+	recalcWpLeash : bool := false; -- true if we need to recalculate the leash lengths because of changes in speed or acceleration
+
+	
 operations
+	public AC_WPNav : AC_PosControl * AP_InertialNav_NavEKF * AC_AttitudeControl ==> AC_WPNav
+	AC_WPNav(posControlP, nav, attControl) ==
+	(
+		posControl := posControlP;
+		insNav := nav;
+		attitudeControl := attControl;
+	);
+
+	public wpAndSplineInit : () ==> ()
+	wpAndSplineInit() ==
+	(
+	
+		-- check wpAccelCms is reasonable
+		if wpAccelCms <= 0
+		then wpAccelCms := WPNAV_ACCELERATION;
+		
+		-- also limit the accel using the maximum lean angle. This 
+		-- prevents the navigation controller from trying to move the
+		-- target point at an unachievable rate
+		let accelLimitCms = AP_Math`GRAVITY_MSS * 100 * MATH`tan(AP_Math`radians(attitudeControl.leanAngleMax()*0.01)) in
+		(
+			if wpAccelCms > accelLimitCms
+			then wpAccelCms := accelLimitCms;
+		);		
+	
+		-- Initialize position controller
+		posControl.initXyController();
+		
+		-- Initialize position controller speed and acceleration
+		posControl.setSpeedXy(wpSpeedCms);
+		posControl.setAccelXy(wpAccelCms);
+		posControl.setJerkXyToDefault();
+		posControl.setSpeedZ(-wpSpeedDownCms,wpSpeedUpCms);
+		posControl.setAccelZ(wpAccelZCms);
+		posControl.calcLeashLengthXy();
+		posControl.calcLeashLengthZ();
+	); 
+	
+
+	public setWpOriginAndDestination : Vector`Vector3 * Vector`Vector3 ==> ()
+	setWpOriginAndDestination(originPar, destinationPar) == (
+		origin := originPar;
+		destination := destinationPar;
+		let posDelta = mk_Vector`Vector3(destination.x - origin.x, destination.y - origin.y, destination.z - origin.z) in
+		(
+			trackLength := Vector`length(posDelta);
+			posDeltaUnit := Vector`divide(posDelta,trackLength);
+		);
+		-- calculate leash lengths
+		calculateWpLeashLength();
+		-- initialise yaw heading, set target yaw to current heading target
+		yaw := attitudeControl.getAttitudeTargetEulerCd().z;
+		
+		trackDesired := 0.0;
+		reachedDestination := false;
+		fastWaypoint := false;
+		slowingDown := false;
+		newWpDestination := true;
+		
+		--initialise the limited speed to current speed along the track
+		let currentVelocity = insNav.getVelocity() in 
+		(
+			-- get speed along track (note: we convert vertical speed into horizontal speed equivalent)
+			let speedAlongTrack = currentVelocity.x * posDeltaUnit.x + currentVelocity.y * posDeltaUnit.y + currentVelocity.z * posDeltaUnit.z in
+			(
+				limitedSpeedXyCms := AP_Math`constrain(speedAlongTrack,0,wpSpeedCms);
+			);
+		);		
+	);
+	
+	-- TODO CTHA: Implement
+	-- calculates horizontal and vertical leash lengths for waypoint controller
+	private calculateWpLeashLength: () ==> ()
+	calculateWpLeashLength() == (
+	-- length of the unit direction vector in the horizontal
+	dcl posDeltaUnitXy : real := AP_Math`norm(posDeltaUnit.x,posDeltaUnit.y),
+			posDeltaUnitZ : real := abs(posDeltaUnit.z),
+			speedZ : real,
+			leashZ : real;
+			
+		if posDeltaUnit.z >= 0.0
+		then
+		(
+			speedZ := wpSpeedUpCms;
+			leashZ := posControl.getLeashUpZ();
+		)
+		else
+		(
+			speedZ := wpSpeedDownCms;
+			leashZ := posControl.getLeashDownZ();
+		);
+		
+		-- calculate the maximum acceleration, maximum velocity, and leash length in the direction of travel
+		if posDeltaUnitZ = 0 and posDeltaUnitXy = 0
+		then
+		(
+			trackAccel := 0;
+			trackSpeed := 0;
+			trackLeashLength := WPNAV_LEASH_LENGTH_MIN;
+		)
+		elseif posDeltaUnitZ = 0
+		then
+		(
+			trackAccel := wpAccelCms/posDeltaUnitXy;
+			trackSpeed := wpSpeedCms/posDeltaUnitXy;
+			trackLeashLength := posControl.getLeashXy()/posDeltaUnitXy;
+		)
+		elseif posDeltaUnitXy = 0
+		then
+		(
+			trackAccel := wpAccelZCms/posDeltaUnitZ;
+			trackSpeed := speedZ/posDeltaUnitZ;
+			trackLeashLength := leashZ/posDeltaUnitZ;
+		)
+		else
+		(
+			trackAccel := AP_Math`min({wpAccelZCms/posDeltaUnitZ,wpAccelCms/posDeltaUnitXy});
+			trackSpeed := AP_Math`min({speedZ/posDeltaUnitZ,wpSpeedCms/posDeltaUnitXy});
+			trackLeashLength := AP_Math`min({leashZ/posDeltaUnitZ,posControl.getLeashXy()/posDeltaUnitXy});
+		);
+		
+		calcSlowDownDistance(trackSpeed,trackAccel);
+		recalcWpLeash := false;
+	);
+	-- calculates distance before waypoint that target point should begin to slow-down assuming it is travelling at full speed
+	private calcSlowDownDistance : real * real ==> ()
+	calcSlowDownDistance(speedCms, accelCms) ==
+	(
+		if accelCms <= 0.0
+		then slowDownDist := 0.0
+		else slowDownDist := speedCms * speedCms / (4.0 * accelCms);
+	);
+	
 	-- todo ctha: Ignoring discontinuities
+	-- update_wpnav - run the wp controller
 	public updateWpnav : () ==> ()
 	updateWpnav() == (
 		let dt = posControl.getDt() in
+		(
 			posControl.setAccelXy(wpAccelCms);
 			posControl.setJerkXyToDefault();
-			posControl.setAccelZ(wpAccelZ);
+			posControl.setAccelZ(wpAccelZ);			
+			-- advance the target if necessary
+			advanceWpTargetAlongTrack(dt);
+			
 			posControl.updateXyController(defaultEkfNavVelGainScaler);
+		);
 	);
+	
+	-- move target location along track from origin to destination
+	private advanceWpTargetAlongTrack : real ==> ()
+	advanceWpTargetAlongTrack(dt) == (
+		dcl trackCovered: real; -- distance (in cm) along the track that the vehicle has traveled.  Measured by drawing a perpendicular line from the track to the vehicle.
+		dcl trackError: Vector`Vector3; -- distance error (in cm) from the track_covered position (i.e. closest point on the line to the vehicle) and the vehicle
+		dcl trackDesiredMax : real; -- the farthest distance (in cm) along the track that the leash will allow
+		dcl trackLeashSlack: real; -- additional distance (in cm) along the track from our track_covered position that our leash will allow
+		dcl reachedLeashLimit : bool := false; -- true when track has reached leash limit and we need to slow down the target point
+		dcl trackErrorXy : real;
+		dcl trackErrorZ : real;
+		dcl leashXy: real;
+		dcl leashZ: real;
+		dcl speedAlongTrack: real;
+		dcl linearVelocity: real;
+		dcl kP: real;
+		dcl distToDestination: real;
+		dcl distToDestination2: Vector`Vector3;
+		dcl finalTarget: Vector`Vector3;
+		dcl currentVelocity: Vector`Vector3;
+		dcl trackCoveredPosition: Vector`Vector3;
+		dcl currentPosition : Vector`Vector3 := self.insNav.getPosition();
+		-- calculate 3d vector from segment's origin
+		dcl currentDelta : Vector`Vector3 := mk_Vector`Vector3(currentPosition.x - self.origin.x, currentPosition.y - self.origin.y, currentPosition.z - self.origin.z);
+		-- calculate how far along the track we are
+		trackCovered := currentDelta.x * self.posDeltaUnit.x + currentDelta.y * self.posDeltaUnit.y + currentDelta.z * self.posDeltaUnit.z;
+		trackCoveredPosition := Vector`multiply(self.posDeltaUnit,trackCovered);
+		trackError := Vector`subtract({currentDelta,trackCoveredPosition});
+		
+		-- calculate the horizontal error
+		trackErrorXy := AP_Math`norm(trackError.x, trackError.y);
+		
+		-- calculate the vertical error
+		trackErrorZ := abs(trackError.z);
+		
+		-- get position control leash lengths
+		leashXy := posControl.getLeashXy();
+		if trackError.z >= 0
+		then
+			leashZ := posControl.getLeashUpZ()
+		else
+			leashZ := posControl.getLeashDownZ();
+			
+		-- calculate how far along the track we could move the intermediate target before reaching the end of the leash
+		trackLeashSlack := AP_Math`min({self.trackLeashLength*(leashZ-trackErrorZ)/leashZ,self.trackLeashLength*(leashXy-trackErrorXy)/leashXy});
+		if trackLeashSlack < 0
+		then
+			trackDesiredMax := trackCovered
+		else
+			trackDesiredMax := trackCovered + trackLeashSlack;
+			
+		-- Check if target is already beyong the leash
+		if self.trackDesired > trackDesiredMax
+		then
+			reachedLeashLimit := true;
+		
+		-- get current velocity
+		currentVelocity := self.insNav.getVelocity();
+		
+		-- get speed along track
+		speedAlongTrack := currentVelocity.x * self.posDeltaUnit.x + currentVelocity.y * posDeltaUnit.y + currentVelocity.z * posDeltaUnit.z;
+		
+		-- calculate point at which velocity switches from linear to sqrt
+		linearVelocity := self.wpSpeedCms;
+		kP := self.posControl.getPPosXy().getKp();
+		if kP >= 0.0
+		then linearVelocity := self.trackAccel;
+		
+		-- let the limited_speed_xy_cms be some range above or below current velocity along track
+		if speedAlongTrack < -linearVelocity
+		then
+			-- we are traveling fast in the opposite direction of travel to the waypoint so do not move the intermediate point
+			limitedSpeedXyCms := 0.0
+		else
+		(
+			-- increase intermediate target point's velocity if not yet at the leash limit
+			if not reachedLeashLimit
+			then
+				limitedSpeedXyCms := limitedSpeedXyCms + 2.0*trackAccel * dt; 
+			-- do not allow speed to be below zero or over top speed
+			limitedSpeedXyCms := AP_Math`constrain(limitedSpeedXyCms,0.0,trackSpeed);
+			
+			-- check if we should begin slowing down
+			if not fastWaypoint
+			then
+			(
+				distToDestination := trackLength - trackDesired;
+				if (not slowingDown) and (distToDestination <= slowDownDist)
+				then
+				-- if target is slowing down, limit the speed
+				(
+					slowingDown := true;
+					limitedSpeedXyCms := AP_Math`min({limitedSpeedXyCms, getSlowDownSpeed(distToDestination, trackAccel)});
+				);					
+			);
+			
+			-- if our current velocity is within the linear velocity range limit the intermediate point's velocity to be no more than the linear_velocity above or below our current velocity
+			if abs(speedAlongTrack) < linearVelocity
+			then
+				limitedSpeedXyCms := AP_Math`constrain(limitedSpeedXyCms,speedAlongTrack-linearVelocity,speedAlongTrack+linearVelocity);
+		);
+		-- advance the current target
+		if not reachedLeashLimit
+		then 
+		(
+			trackDesired := trackDesired + limitedSpeedXyCms * dt;
+			if trackDesired > trackDesiredMax 
+			then (
+				trackDesired := trackDesiredMax;
+				limitedSpeedXyCms := limitedSpeedXyCms - 2.0 * trackAccel * dt;
+				if limitedSpeedXyCms < 0.0
+				then limitedSpeedXyCms := 0.0; 	
+			);
+		);
+		
+		--do not let desired point go past the end of the track
+		trackDesired := AP_Math`constrain(trackDesired,0,trackLength);
+		
+		-- recalculate the desired position
+		finalTarget := Vector`add({origin, Vector`multiply(posDeltaUnit, trackDesired)});
+		posControl.setPosTarget(finalTarget);
+		
+		-- check if we've reached the waypoint
+		if not reachedDestination
+		then
+		(
+			distToDestination2 := Vector`subtract({currentPosition, destination});
+			if distToDestination <= WPNAV_WP_RADIUS
+			then reachedDestination := true;  
+		);
+	);
+	
+	-- get_slow_down_speed - returns target speed of target point based on distance from the destination (in cm)
+	public getSlowDownSpeed : real * real ==> real
+	getSlowDownSpeed(distFromDestination, accelCmss) ==
+	(
+		if(distFromDestination <= 0)
+		then return WPNAV_WP_TRACK_SPEED_MIN;
+		
+		-- calculate desired speed near destination
+		let targetSpeed = AP_Math`safeSqrt(distFromDestination*4.0*accelCmss) in
+		(
+			if(targetSpeed < WPNAV_WP_TRACK_SPEED_MIN)
+			then return WPNAV_WP_TRACK_SPEED_MIN
+			else return targetSpeed;
+		);
+	);
+	
+	-- TODO CTHA: Implement me
+	public getYaw : () ==> real
+	getYaw() == (
+		return 0.0;
+	)
 
 functions
 

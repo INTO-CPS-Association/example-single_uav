@@ -1,0 +1,37 @@
+class LowPassFilterVector
+
+instance variables
+	output: Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	cutOffFrequency: real := 0.0;
+	
+operations
+	public setCutoffFrequency : real ==> ()
+	setCutoffFrequency(cutoffFreq) ==
+	(
+		cutOffFrequency := cutoffFreq;
+	);
+
+	public apply : Vector`Vector3 * real ==> Vector`Vector3
+	apply(sample, dt) ==
+	(
+		let rc = 1.0/(MATH`pi*cutOffFrequency),
+				alpha = AP_Math`constrain(dt/(dt+rc), 0.0, 1.0) in
+		(
+					 output := Vector`multiply(Vector`subtract({sample, output}),alpha);
+		);
+		return output;
+	);
+	
+	public reset : () ==> ()
+	reset() == 
+	(
+		output := mk_Vector`Vector3(0,0,0);
+	);
+	
+	public reset : Vector`Vector3 ==> ()
+	reset(newBasevalue) == 
+	(
+		output := newBasevalue;
+	);
+
+end LowPassFilterVector
