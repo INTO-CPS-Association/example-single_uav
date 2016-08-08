@@ -1,0 +1,28 @@
+class Gyroscope
+types
+
+values
+
+instance variables
+	-- contract connections
+	velocityYaw : real := 0;
+	velocityPitch : real := 0;
+	velocityRoll : real := 0;
+	
+	-- Sampled data
+	-- x = roll, y = pitch, z := yaw 
+	velocityRs : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- r/s
+
+operations
+	public update : () ==> ()
+	update() == velocityRs := mk_Vector`Vector3(velocityRoll,velocityPitch,velocityYaw);
+	
+	public getVelocity : () ==> Vector`Vector3
+	getVelocity() == return velocityRs;
+	
+
+functions
+
+traces
+
+end Gyroscope

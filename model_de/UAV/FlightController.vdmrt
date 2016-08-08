@@ -1,0 +1,42 @@
+class FlightController
+types
+	-- Waypoint makes the drone automatically fly to waypoints.
+	-- MANUAL depends on pilot controls e.g. roll, pitch, yaw, throttle
+	-- ALT_HOLD holds the altitude (Z position).
+	-- POSHOLD holds X,Y, and Z position.
+	public MODE = <WAYPOINT> | <MANUAL> | <ALT_HOLD> | <POS_HOLD> | <THROTTLE_HOLD>;
+instance variables
+	motorCrtl : MotorController;
+	mode : MODE := <THROTTLE_HOLD>;
+	throttleTarget : real := 0; -- For THROTTLE_HOLD
+operations
+-- TODO Define operations here
+	public FlightController : MotorController ==> FlightController
+	FlightController(mc) == (
+		motorCrtl := mc;
+		IO`println("FlightController not connected");
+	);
+	
+	public update : () ==> ()
+	update() ==	(
+		cases mode :
+			<WAYPOINT> -> IO`println("WAYPOINT NOT IMPLEMENTED"),
+			<MANUAL> ->  IO`println("MANUAL NOT IMPLEMENTED"),
+			<ALT_HOLD> -> IO`println("ALT_HOLD NOT IMPLEMENTED"),
+			<POS_HOLD> -> IO`println("POS_HOLD NOT IMPLEMENTED"),
+			<THROTTLE_HOLD> ->  maintainThrottle()
+		end
+	);
+		
+	public setMode : MODE ==> ()
+	setMode(modePar) == mode := modePar; 
+	
+	public setThrottle : real ==> ()
+	setThrottle(throttle) == throttleTarget := throttle;
+	
+	public maintainThrottle : () ==> ()
+	maintainThrottle() == (
+		motorCrtl.setThrottle(throttleTarget);
+	);
+functions
+end FlightController

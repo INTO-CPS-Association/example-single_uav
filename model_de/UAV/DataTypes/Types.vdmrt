@@ -1,0 +1,9 @@
+class Types
+types
+	public Throttle = real
+	inv throttle == throttlePre(throttle);
+functions
+	public throttlePre : real -> bool
+	throttlePre(throttle) == 
+		throttle >= 0.0 and throttle <= 1000.0
+end Types

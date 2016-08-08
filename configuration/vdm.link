@@ -1,38 +1,32 @@
 -- Linking of Shared Design Parameters
-sdp GRAVITY_MSS = AP_Math.GRAVITY_MSS;
-sdp USE_MPC = ArduCopter.USE_MPC;
-sdp MAIN_LOOP_RATE = ArduCopter.MAIN_LOOP_RATE;
+sdp GRAVITY_MSS = SDPs.GRAVITY_MSS;
+sdp USE_MPC = SDPs.USE_MPC;
+sdp MAIN_LOOP_RATE = UAV.MAIN_LOOP_RATE;
 
 -- Linking of Monitored Variables
-input gyroX = ArduPilot.arduCopter.ins.gyroRateX;
-input gyroY = ArduPilot.arduCopter.ins.gyroRateY;
-input gyroZ = ArduPilot.arduCopter.ins.gyroRateZ;
+input gyroX = UAVPilot.uav.gyroscope.velocityRoll;
+input gyroY = UAVPilot.uav.gyroscope.velocityPitch;
+input gyroZ = UAVPilot.uav.gyroscope.velocityYaw;
 
-input accelerometerX = ArduPilot.arduCopter.ins.accelX;
-input accelerometerY = ArduPilot.arduCopter.ins.accelY;
-input accelerometerZ = ArduPilot.arduCopter.ins.accelZ;
+input accelerometerX = UAVPilot.uav.accelerometer.accelerometerX;
+input accelerometerY = UAVPilot.uav.accelerometer.accelerometerY;
+input accelerometerZ = UAVPilot.uav.accelerometer.accelerometerZ;
 
-input gpsZ = ArduPilot.arduCopter.gps.locationAlt;
-input gpsX = ArduPilot.arduCopter.gps.locationLat;
-input gpsY = ArduPilot.arduCopter.gps.locationLong;
-input gpsVelX = ArduPilot.arduCopter.gps.velocityX;
-input gpsVelY = ArduPilot.arduCopter.gps.velocityY;
-input gpsVelZ = ArduPilot.arduCopter.gps.velocityZ;
+input gpsZ = UAVPilot.uav.gps.locationAlt;
+input gpsX = UAVPilot.uav.gps.locationLat;
+input gpsY = UAVPilot.uav.gps.locationLong;
+input gpsVelX = UAVPilot.uav.gps.velocityX;
+input gpsVelY = UAVPilot.uav.gps.velocityY;
+input gpsVelZ = UAVPilot.uav.gps.velocityZ;
 
 -- Linking of Controlled Variables
-output motorSetpoint1 = ArduPilot.arduCopter.motors.motor1;
-output motorSetpoint2 = ArduPilot.arduCopter.motors.motor2;
-output motorSetpoint3 = ArduPilot.arduCopter.motors.motor3;
-output motorSetpoint4 = ArduPilot.arduCopter.motors.motor4;
+output motorSetpoint1 = UAVPilot.uav.flightController.motorCrtl.motor1.throttle;
+output motorSetpoint2 = UAVPilot.uav.flightController.motorCrtl.motor2.throttle;
+output motorSetpoint3 = UAVPilot.uav.flightController.motorCrtl.motor3.throttle;
+output motorSetpoint4 = UAVPilot.uav.flightController.motorCrtl.motor4.throttle;
 
 -- Linking of Events
 --event HIGH=System.eventHandler.high;
 
 -- other linked names used in scenarios
-model rollTarget = ArduPilot.arduCopter.fltMode.rollTarget;
-model pitchTarget = ArduPilot.arduCopter.fltMode.pitchTarget;
-model yawRateTarget = ArduPilot.arduCopter.fltMode.yawRateTarget;
-model climbRateTarget = ArduPilot.arduCopter.fltMode.climbRateTarget;
-model pilote_desired_throttle = ArduPilot.arduCopter.fltMode.pilote_desired_throttle;
--- model pilote_desired_forward =
--- model pilote_desired_right =  
+model pilote_desired_throttle = UAVPilot.uav.flightController.throttleTarget;

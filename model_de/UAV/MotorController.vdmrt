@@ -1,0 +1,46 @@
+-- Possible extensions to this class could be different motor setups
+class MotorController
+instance variables	
+	motor1 : Motor;
+	motor2 : Motor;
+	motor3 : Motor;
+	motor4 : Motor;
+	targetYaw : real := 0.0;
+	targetPitch : real := 0.0;
+	targetRoll : real := 0.0;
+	targetThrottle : real := 0.0;
+
+operations
+public MotorController: () ==> MotorController
+	MotorController() == (
+		motor1 := new Motor();
+		motor2 := new Motor();
+		motor3 := new Motor();
+		motor4 := new Motor();
+	);
+	
+	public setPrincipalAxes : real * real * real ==> ()
+	setPrincipalAxes(roll, pitch, yaw) ==
+	(
+		targetRoll := roll;
+		targetPitch := pitch;
+		targetYaw := yaw;
+	);
+	
+	--TODO: sets the throttle parameter on all motors
+	public setThrottle : real ==> ()
+	setThrottle(throttle) == (	
+		targetThrottle := throttle;
+		if throttle = 1000 then
+		(
+			motor1.setThrottle(throttle);
+			motor3.setThrottle(throttle);
+		)
+		else
+		(
+			motor2.setThrottle(throttle);
+			motor4.setThrottle(throttle);		
+		);		
+	)
+
+end MotorController

@@ -5,7 +5,7 @@ operations
 -- run a simulation
 public run: () ==> <DONE>
 run() == (
-  start(ArduPilot`arduCopter);
+  start(UAVPilot`uav);
   block();
   return <DONE>
 );

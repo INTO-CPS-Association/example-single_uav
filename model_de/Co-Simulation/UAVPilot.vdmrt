@@ -1,0 +1,18 @@
+system UAVPilot
+
+instance variables
+
+public static uav: UAV := new UAV();
+
+-- architecture definition
+cpu : CPU := new CPU(<FP>, 168E6); -- PixHawk: 168MHz Cortex M4F CPU
+	
+operations
+
+public UAVPilot: () ==> UAVPilot
+UAVPilot() == (
+  -- deploy uav
+  cpu.deploy(uav, "UAV")
+)
+
+end UAVPilot

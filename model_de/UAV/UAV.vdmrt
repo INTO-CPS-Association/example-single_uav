@@ -1,0 +1,28 @@
+class UAV
+values
+	public MAIN_LOOP_RATE : real = 0.0025; -- sdp, 0.0025 seconds corresponds to 400 Hz
+instance variables
+	gps : GPS;
+	accelerometer: Accelerometer;
+	gyroscope : Gyroscope;
+	flightController : FlightController;
+	
+operations
+
+	public UAV: () ==> UAV
+	UAV() == (
+		gps := new GPS();
+		accelerometer := new Accelerometer();
+		gyroscope := new Gyroscope();
+		flightController := new FlightController(new MotorController());
+		flightController.setMode(<THROTTLE_HOLD>)
+	);
+-- define periodic thread (nanoseconds)
+	loop: () ==> ()
+	loop() == duration(MAIN_LOOP_RATE * 1e9)(
+	flightController.update();
+	)
+	
+	-- define periodic thread (nanoseconds)
+	thread periodic(MAIN_LOOP_RATE * 1e9, 0, 0, 0)(loop)
+end UAV
