@@ -20,6 +20,9 @@ operations
 -- define periodic thread (nanoseconds)
 	loop: () ==> ()
 	loop() == duration(MAIN_LOOP_RATE * 1e9)(
+	gps.update();
+	gyroscope.update();
+	accelerometer.update();
 	flightController.update();
 	)
 	

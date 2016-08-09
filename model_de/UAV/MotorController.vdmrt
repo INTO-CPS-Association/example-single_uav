@@ -31,16 +31,10 @@ public MotorController: () ==> MotorController
 	public setThrottle : real ==> ()
 	setThrottle(throttle) == (	
 		targetThrottle := throttle;
-		if throttle = 1000 then
-		(
-			motor1.setThrottle(throttle);
-			motor3.setThrottle(throttle);
-		)
-		else
-		(
-			motor2.setThrottle(throttle);
-			motor4.setThrottle(throttle);		
-		);		
+		motor1.setThrottle(throttle);
+		motor2.setThrottle(throttle);
+		motor3.setThrottle(throttle);
+		motor4.setThrottle(throttle);		
 	)
 
 end MotorController
