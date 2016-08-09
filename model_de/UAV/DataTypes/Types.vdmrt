@@ -5,5 +5,5 @@ types
 functions
 	public throttlePre : real -> bool
 	throttlePre(throttle) == 
-		throttle >= 0.0 and throttle <= 1000.0
+		throttle >= 0.0 and throttle <= 100.0
 end Types
