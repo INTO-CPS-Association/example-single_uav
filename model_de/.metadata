@@ -1,5 +1,5 @@
 #
-#Mon Aug 08 20:57:01 CEST 2016
+#Tue Aug 09 21:29:36 CEST 2016
 AP_Baro.climbRate=real,variable
 AC_PosControl.resetAccelToLeanXy=bool,variable
 Matrix.initValue=_operation,sync
