@@ -22,7 +22,7 @@ operations
 	update() == (
 		location.x := locationLat;
 		location.y := locationLong;
-		location.z := locationAlt;
+		location.z := -locationAlt;
 		velocity.x := velocityX;
 		velocity.y := velocityY;
 		velocity.z := velocityZ;

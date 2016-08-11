@@ -1,0 +1,15 @@
+class SF_GPS
+instance variables
+	GPS : GPS;
+operations
+	public SF_GPS : GPS ==> SF_GPS
+	SF_GPS(gpsComponent) ==
+		GPS := gpsComponent;
+	
+	public getPosition : () ==> Vector`Vector3
+	getPosition() == return GPS.getLocation();
+	
+	public getVelocity : () ==> Vector`Vector3
+	getVelocity() == return GPS.getVelocity();
+		
+end SF_GPS

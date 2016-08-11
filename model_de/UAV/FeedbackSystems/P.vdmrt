@@ -1,0 +1,16 @@
+class P
+instance variables
+	targetPoint : real := 0.0;
+	kP : real := 1.0;
+operations
+	public P : real ==> P
+	P(gainValue) == kP := gainValue;
+	
+	public setTargetPoint : real ==> ()
+	setTargetPoint(tPoint)  ==
+		targetPoint := tPoint;
+	
+	public getP : real ==> real
+	getP(output) ==
+		return kP * (targetPoint - output);
+end P

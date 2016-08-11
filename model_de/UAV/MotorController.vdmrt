@@ -5,10 +5,7 @@ instance variables
 	motor2 : Motor;
 	motor3 : Motor;
 	motor4 : Motor;
-	targetYaw : real := 0.0;
-	targetPitch : real := 0.0;
-	targetRoll : real := 0.0;
-	targetThrottle : real := 0.0;
+	currentCommand : Types`MotorCommand;
 
 operations
 public MotorController: () ==> MotorController
@@ -19,22 +16,18 @@ public MotorController: () ==> MotorController
 		motor4 := new Motor();
 	);
 	
-	public setPrincipalAxes : real * real * real ==> ()
-	setPrincipalAxes(roll, pitch, yaw) ==
-	(
-		targetRoll := roll;
-		targetPitch := pitch;
-		targetYaw := yaw;
+	public runMotorCommand : Types`MotorCommand ==> ()
+	runMotorCommand(mc) == (
+		currentCommand := mc;
+		setThrottle(mc.throttle);
 	);
 	
-	--TODO: sets the throttle parameter on all motors
-	public setThrottle : real ==> ()
+	private setThrottle : real ==> ()
 	setThrottle(throttle) == (	
-		targetThrottle := throttle;
 		motor1.setThrottle(throttle);
 		motor2.setThrottle(throttle);
 		motor3.setThrottle(throttle);
 		motor4.setThrottle(throttle);		
-	)
+	);
 
 end MotorController

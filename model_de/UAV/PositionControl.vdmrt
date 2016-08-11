@@ -1,0 +1,53 @@
+class PositionControl
+values
+	P_GAIN_VALUE_THROTTLE = 5.0; -- Used for pController. This value is 
+	HOLD_ALTITUDE_THROTTLE = 87; -- The throttle value required for the drone to hold its altitude in perfect conditions.
+	FULL_THROTTLE = 100;
+	MAX_TOP_THROTTLE_GAIN  = FULL_THROTTLE - HOLD_ALTITUDE_THROTTLE;
+
+	
+instance variables
+	sensorData : SF_GPS;
+	pController : P := new P(P_GAIN_VALUE_THROTTLE);
+	targetPoint : Vector`Vector3;
+	
+operations
+	public PositionControl : SF_GPS ==> PositionControl
+	PositionControl(gps) == sensorData := gps;
+	
+	public setTargetPosition : Vector`Vector3 ==> ()
+	setTargetPosition(z) == ( 
+		targetPoint:=z;
+		pController.setTargetPoint(z.z);
+	);
+	
+	public getPosition : () ==> Vector`Vector3
+	getPosition() == return sensorData.getPosition();
+	
+	public withinBounds : Vector`Vector3 * Vector`Vector3 ==> bool
+	withinBounds(pos1, pos2) == (
+		return abs(pos1.z - pos2.z) < 1; 
+	);
+	
+	
+	public update : () ==> Types`MotorCommand
+	update() == (
+		-- Get altitude
+		let altitude = sensorData.getPosition().z,
+		-- Get the proportional gain
+			p = pController.getP(altitude),
+			throttle = (
+				-- Convert the proportional gain into a throttle value
+					if p > MAX_TOP_THROTTLE_GAIN then
+						-- set full throttle
+						FULL_THROTTLE
+					elseif p < -HOLD_ALTITUDE_THROTTLE then
+						0
+					else
+						HOLD_ALTITUDE_THROTTLE + p
+			) in (
+				return mk_Types`MotorCommand(0,0,0,throttle);					
+			);
+	);
+	
+end PositionControl

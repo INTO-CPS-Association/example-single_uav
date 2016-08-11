@@ -5,25 +5,34 @@ types
 	-- ALT_HOLD holds the altitude (Z position).
 	-- POSHOLD holds X,Y, and Z position.
 	public MODE = <WAYPOINT> | <MANUAL> | <ALT_HOLD> | <POS_HOLD> | <THROTTLE_HOLD>;
+values
+	P_GAIN_VALUE_THROTTLE = 5.0; -- Used for pController. This value is 
+	HOLD_ALTITUDE_THROTTLE = 87; -- The throttle value required for the drone to hold its altitude in perfect conditions.
+	FULL_THROTTLE = 100;
 instance variables
 	motorCrtl : MotorController;
-	mode : MODE := <THROTTLE_HOLD>;
+	mode : MODE := <ALT_HOLD>;
 	throttleTarget : real := 0; -- For THROTTLE_HOLD
+	pController : P := new P(P_GAIN_VALUE_THROTTLE);
+	targetPosition : Vector`Vector3; -- For ALT_HOLD
+	positionController : PositionControl;
+	waypointTargets : seq of Vector`Vector3;
 operations
 -- TODO Define operations here
-	public FlightController : MotorController ==> FlightController
-	FlightController(mc) == (
+	public FlightController : MotorController * SF_GPS ==> FlightController
+	FlightController(mc, sensorData) == (
 		motorCrtl := mc;
+		positionController := new PositionControl(sensorData);
 		IO`println("FlightController not connected");
 	);
 	
 	public update : () ==> ()
 	update() ==	(
 		cases mode :
-			<WAYPOINT> -> IO`println("WAYPOINT NOT IMPLEMENTED"),
+			<WAYPOINT> -> waypointRun(),
 			<MANUAL> ->  IO`println("MANUAL NOT IMPLEMENTED"),
-			<ALT_HOLD> -> IO`println("ALT_HOLD NOT IMPLEMENTED"),
-			<POS_HOLD> -> IO`println("POS_HOLD NOT IMPLEMENTED"),
+			<ALT_HOLD> -> altitudeHold(),
+			<POS_HOLD> -> positionHold(),
 			<THROTTLE_HOLD> ->  maintainThrottle()
 		end
 	);
@@ -34,9 +43,55 @@ operations
 	public setThrottle : real ==> ()
 	setThrottle(throttle) == throttleTarget := throttle;
 	
-	public maintainThrottle : () ==> ()
+	public setAltitudeTarget : Vector`Vector3 ==> ()
+	setAltitudeTarget(targetPos) == (
+		positionController.setTargetPosition(targetPos);
+		targetPosition := targetPos;
+	);
+	
+	public setWaypointTargets : seq of Vector`Vector3 ==> ()
+	setWaypointTargets(wps) == (
+		targetPosition := hd wps;
+		waypointTargets := tl wps;
+		positionController.setTargetPosition(targetPosition);
+	);
+	
+	waypointRun : () ==> ()
+	waypointRun() == (
+			if positionController.withinBounds(positionController.getPosition(), targetPosition)
+			then(
+				if waypointTargets <> []
+				then (
+					setWaypointTargets(waypointTargets);
+					runFullUpdate();		
+				)
+				else (
+					setMode(<POS_HOLD>);
+					update();
+				)
+			)
+			else
+				runFullUpdate();
+	);
+	
+	runFullUpdate : () ==> ()
+	runFullUpdate() == 		
+		let motorCmd = positionController.update() in
+			motorCrtl.runMotorCommand(motorCmd);
+	
+	 
+	positionHold : () ==> ()
+	positionHold() == 
+		runFullUpdate();	
+	
+	altitudeHold : () ==> ()
+	altitudeHold() == (
+		runFullUpdate();		
+	);
+	
+	maintainThrottle : () ==> ()
 	maintainThrottle() == (
-		motorCrtl.setThrottle(throttleTarget);
+		motorCrtl.runMotorCommand(mk_Types`MotorCommand(0,0,0,throttleTarget));
 	);
 functions
 end FlightController

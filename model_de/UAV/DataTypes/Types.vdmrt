@@ -2,6 +2,11 @@ class Types
 types
 	public Throttle = real
 	inv throttle == throttlePre(throttle);
+	public MotorCommand ::
+	yaw : real
+	pitch : real
+	roll : real
+	throttle : Throttle
 functions
 	public throttlePre : real -> bool
 	throttlePre(throttle) == 
