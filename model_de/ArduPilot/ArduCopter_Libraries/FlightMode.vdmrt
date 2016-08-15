@@ -2,7 +2,7 @@ class FlightMode
 
 types
 	public MODE = <ACRO> | <STABILIZE> | <ALT_HOLD> | <AUTO> | <CIRCLE> | <LOITER> | <LAND> |
-					<GUIDED> | <RTL> | <DRIFT> | <SPORT> | <FLIP> | <AUTOTUNE> | <POSHOLD>
+					<GUIDED> | <RTL> | <DRIFT> | <SPORT> | <FLIP> | <AUTOTUNE> | <POSHOLD> | <WAYPOINT>
 instance variables
 	attitudeControl : AC_AttitudeControl;
 	posControl : AC_PosControl;
@@ -17,6 +17,9 @@ instance variables
 	
 	-- smoothing_gain : a number from 1 to 50 with 1 being sluggish and 50 being very crisp
 	smoothingGain : real := 38;
+	
+	targetPosition : Vector`Vector3; -- ADDED
+	waypointTargets : seq of Vector`Vector3; -- ADDED
 
 operations 
 	public FlightMode : AC_AttitudeControl * AC_PosControl ==> FlightMode
@@ -30,7 +33,8 @@ operations
 		
 		cases controlMode :
 		<ALT_HOLD> -> altholdUpdate(),
-		<STABILIZE> -> stabilizaUpdate()
+		<STABILIZE> -> stabilizaUpdate(),
+		<WAYPOINT> -> waypointRun() -- ADDED
 		end
 	);
 	
@@ -41,6 +45,34 @@ operations
 	setMode(mode) == (
 		controlMode := mode;
 	); 
+	
+	public setWaypointTargets : seq of Vector`Vector3 ==> () -- ADDED
+	setWaypointTargets(wps) == (
+		targetPosition := hd wps;
+		IO`println("Waypoints has been set:");
+		IO`println(targetPosition.z);
+		climbRateTarget := targetPosition.z;
+		waypointTargets := tl wps;
+		posControl.setAltTargetFromClimbRate(targetPosition.z);
+	);
+	
+	waypointRun : () ==> () -- ADDED
+	waypointRun() == (
+			if posControl.withinBounds(targetPosition)
+			then(
+				if waypointTargets <> []
+				then (
+					setWaypointTargets(waypointTargets);
+					altholdUpdate();		
+				)
+				else (
+					setMode(<ALT_HOLD>);
+					update();
+				)
+			)
+			else
+				altholdUpdate();
+	);
 	
 	private altholdUpdate : () ==> ()
 	altholdUpdate() ==

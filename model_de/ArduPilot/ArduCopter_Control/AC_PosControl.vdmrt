@@ -47,6 +47,13 @@ operations
 		accelErrorFilter.setCutoffFrequency(dt, POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ);
 	);
 
+	public withinBounds : Vector`Vector3  ==> bool -- ADDED
+	withinBounds(targetPosition) == (
+		IO`println("withinbounds:");
+		IO`println(abs(insNav.getAltitude() - targetPosition.z));
+		return abs(insNav.getAltitude() - targetPosition.z) < 100
+	);
+
 	-- set climb rate target in cms
 	public setAltTargetFromClimbRate : real ==> ()
 	setAltTargetFromClimbRate(climbRateTarget) == 
