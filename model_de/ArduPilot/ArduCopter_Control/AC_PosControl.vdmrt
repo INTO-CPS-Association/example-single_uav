@@ -51,7 +51,7 @@ operations
 	withinBounds(targetPosition) == (
 		IO`println("withinbounds:");
 		IO`println(abs(insNav.getAltitude() - targetPosition.z));
-		return abs(insNav.getAltitude() - targetPosition.z) < 100
+		return abs(insNav.getAltitude() - targetPosition.z) < 50
 	);
 
 	-- set climb rate target in cms
