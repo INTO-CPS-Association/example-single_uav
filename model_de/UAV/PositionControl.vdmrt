@@ -4,11 +4,18 @@ values
 	HOLD_ALTITUDE_THROTTLE = 87; -- The throttle value required for the drone to hold its altitude in perfect conditions.
 	FULL_THROTTLE = 100;
 	MAX_TOP_THROTTLE_GAIN  = FULL_THROTTLE - HOLD_ALTITUDE_THROTTLE;
+	-- Controllers: 
+	PID_P = 2.5;
+	PID_I = 0.1;
+	PID_D = 1000;
+	
+
 
 	
 instance variables
 	sensorData : SF_GPS;
 	pController : P := new P(P_GAIN_VALUE_THROTTLE);
+	pidController : PID := new PID(PID_P, PID_I, PID_D, UAV`MAIN_LOOP_RATE);
 	targetPoint : Vector`Vector3;
 	
 operations
@@ -19,6 +26,7 @@ operations
 	setTargetPosition(z) == ( 
 		targetPoint:=z;
 		pController.setTargetPoint(z.z);
+		pidController.setTargetPoint(z.z);
 	);
 	
 	public getPosition : () ==> Vector`Vector3
@@ -35,7 +43,8 @@ operations
 		-- Get altitude
 		let altitude = sensorData.getPosition().z,
 		-- Get the proportional gain
-			p = pController.getP(altitude),
+			--p = pController.getP(altitude),
+			p = pidController.update(altitude),
 			throttle = (
 				-- Convert the proportional gain into a throttle value
 					if p > MAX_TOP_THROTTLE_GAIN then
