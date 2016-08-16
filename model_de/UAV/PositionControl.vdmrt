@@ -26,7 +26,7 @@ operations
 	
 	public withinBounds : Vector`Vector3 * Vector`Vector3 ==> bool
 	withinBounds(pos1, pos2) == (
-		return abs(pos1.z - pos2.z) < 1; 
+		return abs(pos1.z - pos2.z) < 0.5; 
 	);
 	
 	
@@ -41,11 +41,15 @@ operations
 					if p > MAX_TOP_THROTTLE_GAIN then
 						-- set full throttle
 						FULL_THROTTLE
-					elseif p < -HOLD_ALTITUDE_THROTTLE then
-						0
-					else
-						HOLD_ALTITUDE_THROTTLE + p
+					else (
+
+						let newThrottle = HOLD_ALTITUDE_THROTTLE + p in
+							if newThrottle < 0
+							then 0
+							else newThrottle
+					)
 			) in (
+				IO`printf("throttle: %3$s HOLD_ALTITUDE_THROTTLE: %1$s  p: %2$s\n",[HOLD_ALTITUDE_THROTTLE, p, throttle]);
 				return mk_Types`MotorCommand(0,0,0,throttle);					
 			);
 	);
