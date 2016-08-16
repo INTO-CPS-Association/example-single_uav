@@ -51,9 +51,10 @@ operations
 		targetPosition := hd wps;
 		IO`println("Waypoints has been set:");
 		IO`println(targetPosition.z);
-		climbRateTarget := targetPosition.z;
+		--climbRateTarget := targetPosition.z;
+		posControl.setAltTarget(targetPosition.z);
 		waypointTargets := tl wps;
-		posControl.setAltTargetFromClimbRate(targetPosition.z);
+		--posControl.setAltTargetFromClimbRate(targetPosition.z);
 	);
 	
 	waypointRun : () ==> () -- ADDED

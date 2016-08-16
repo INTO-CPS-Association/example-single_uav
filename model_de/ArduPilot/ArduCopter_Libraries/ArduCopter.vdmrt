@@ -45,7 +45,7 @@ operations
 		-- ArduCopter pde files:
 		fltMode := new FlightMode(attController, posController);
 		fltMode.setMode(<WAYPOINT>);
-		fltMode.setWaypointTargets([mk_Vector`Vector3(100,200,300),mk_Vector`Vector3(200,400,600),mk_Vector`Vector3(200,400,500)]);
+		fltMode.setWaypointTargets([mk_Vector`Vector3(100,200,300),mk_Vector`Vector3(200,400,200),mk_Vector`Vector3(200,400,500)]);
 		posVec := new PositionVector(ahrs, insNav);
 		navigation := new Navigation(fltMode, posVec, insNav, ahrs); 
 		attitude := new Attitude(posController, motors, insNav);

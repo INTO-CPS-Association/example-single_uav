@@ -54,6 +54,10 @@ operations
 		return abs(insNav.getAltitude() - targetPosition.z) < 50
 	);
 
+
+	public setAltTarget : real ==> ()
+	setAltTarget(altTarget) == positionTarget.z := altTarget;
+	
 	-- set climb rate target in cms
 	public setAltTargetFromClimbRate : real ==> ()
 	setAltTargetFromClimbRate(climbRateTarget) == 
