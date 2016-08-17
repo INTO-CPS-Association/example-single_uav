@@ -3,8 +3,6 @@ values
 	public MAIN_LOOP_RATE : real = 0.0025; -- sdp, 0.0025 seconds corresponds to 400 Hz
 instance variables
 	gps : GPS;
-	accelerometer: Accelerometer;
-	gyroscope : Gyroscope;
 	flightController : FlightController;
 	
 operations
@@ -12,17 +10,7 @@ operations
 	public UAV: () ==> UAV
 	UAV() == (
 		gps := new GPS();
-		accelerometer := new Accelerometer();
-		gyroscope := new Gyroscope();
 		flightController := new FlightController(new MotorController(), new SF_GPS(gps));
-		
-		-- Hold a given throttle
-		--flightController.setMode(<THROTTLE_HOLD>);
-		--flightController.setThrottle(87);
-		
-		-- Hold a given altitude
-		-- flightController.setMode(<ALT_HOLD>);
-		-- flightController.setAltitudeTarget(mk_Vector`Vector3(0,0,10));
 		
 		--Fly to waypoints
 		flightController.setMode(<WAYPOINT>);
@@ -32,8 +20,6 @@ operations
 	loop: () ==> ()
 	loop() == duration(MAIN_LOOP_RATE * 1e9)(
 	gps.update();
-	gyroscope.update();
-	accelerometer.update();
 	flightController.update();
 	)
 	

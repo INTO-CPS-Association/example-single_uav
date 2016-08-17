@@ -4,13 +4,13 @@ sdp USE_MPC = SDPs.USE_MPC;
 sdp MAIN_LOOP_RATE = UAV.MAIN_LOOP_RATE;
 
 -- Linking of Monitored Variables
-input gyroX = UAVPilot.uav.gyroscope.velocityRoll;
-input gyroY = UAVPilot.uav.gyroscope.velocityPitch;
-input gyroZ = UAVPilot.uav.gyroscope.velocityYaw;
+--input gyroX = UAVPilot.uav.gyroscope.velocityRoll;
+--input gyroY = UAVPilot.uav.gyroscope.velocityPitch;
+--input gyroZ = UAVPilot.uav.gyroscope.velocityYaw;
 
-input accelerometerX = UAVPilot.uav.accelerometer.accelerometerX;
-input accelerometerY = UAVPilot.uav.accelerometer.accelerometerY;
-input accelerometerZ = UAVPilot.uav.accelerometer.accelerometerZ;
+--input accelerometerX = UAVPilot.uav.accelerometer.accelerometerX;
+--input accelerometerY = UAVPilot.uav.accelerometer.accelerometerY;
+--input accelerometerZ = UAVPilot.uav.accelerometer.accelerometerZ;
 
 input gpsZ = UAVPilot.uav.gps.locationAlt;
 input gpsX = UAVPilot.uav.gps.locationLat;

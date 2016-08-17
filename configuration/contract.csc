@@ -5,14 +5,14 @@ sdp real MAIN_LOOP_RATE;
 
 ---- Monitored variables ----
 -- Gyro
-monitored real gyroX;
-monitored real gyroY;
-monitored real gyroZ;
+--monitored real gyroX;
+--monitored real gyroY;
+--monitored real gyroZ;
 
 -- Accelerometer
-monitored real accelerometerX;
-monitored real accelerometerY;
-monitored real accelerometerZ;
+--monitored real accelerometerX;
+--monitored real accelerometerY;
+--monitored real accelerometerZ;
 
 -- GPS
 monitored real gpsX;

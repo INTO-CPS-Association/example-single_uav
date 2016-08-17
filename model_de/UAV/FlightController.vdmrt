@@ -5,20 +5,14 @@ types
 	-- ALT_HOLD holds the altitude (Z position).
 	-- POSHOLD holds X,Y, and Z position.
 	public MODE = <WAYPOINT> | <MANUAL> | <ALT_HOLD> | <POS_HOLD> | <THROTTLE_HOLD>;
-values
-	P_GAIN_VALUE_THROTTLE = 5.0; -- Used for pController. This value is 
-	HOLD_ALTITUDE_THROTTLE = 87; -- The throttle value required for the drone to hold its altitude in perfect conditions.
-	FULL_THROTTLE = 100;
 instance variables
 	motorCrtl : MotorController;
 	mode : MODE := <ALT_HOLD>;
 	throttleTarget : real := 0; -- For THROTTLE_HOLD
-	pController : P := new P(P_GAIN_VALUE_THROTTLE);
 	targetPosition : Types`Vector3; -- For ALT_HOLD
 	positionController : PositionControl;
 	waypointTargets : seq of Types`Vector3;
 operations
--- TODO Define operations here
 	public FlightController : MotorController * SF_GPS ==> FlightController
 	FlightController(mc, sensorData) == (
 		motorCrtl := mc;
@@ -77,8 +71,7 @@ operations
 	runFullUpdate : () ==> ()
 	runFullUpdate() == 		
 		let motorCmd = positionController.update() in
-			motorCrtl.runMotorCommand(motorCmd);
-	
+			motorCrtl.runMotorCommand(motorCmd);	
 	 
 	positionHold : () ==> ()
 	positionHold() == 
