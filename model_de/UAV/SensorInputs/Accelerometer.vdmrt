@@ -10,12 +10,12 @@ instance variables
 	accelerometerZ : real := 0;
 	
 	-- Sampled value
-	accelerationCmss : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- cm/s^2
+	accelerationCmss : Types`Vector3 := mk_Types`Vector3(0,0,0); -- cm/s^2
 operations
 	public update : () ==> ()
-	update() == accelerationCmss := mk_Vector`Vector3(accelerometerX,accelerometerY,accelerometerZ);
+	update() == accelerationCmss := mk_Types`Vector3(accelerometerX,accelerometerY,accelerometerZ);
 	
-	public getAcceleration : () ==> Vector`Vector3
+	public getAcceleration : () ==> Types`Vector3
 	getAcceleration() == return accelerationCmss;
 	
 functions

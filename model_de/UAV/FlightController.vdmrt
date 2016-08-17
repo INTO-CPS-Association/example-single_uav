@@ -14,9 +14,9 @@ instance variables
 	mode : MODE := <ALT_HOLD>;
 	throttleTarget : real := 0; -- For THROTTLE_HOLD
 	pController : P := new P(P_GAIN_VALUE_THROTTLE);
-	targetPosition : Vector`Vector3; -- For ALT_HOLD
+	targetPosition : Types`Vector3; -- For ALT_HOLD
 	positionController : PositionControl;
-	waypointTargets : seq of Vector`Vector3;
+	waypointTargets : seq of Types`Vector3;
 operations
 -- TODO Define operations here
 	public FlightController : MotorController * SF_GPS ==> FlightController
@@ -43,13 +43,13 @@ operations
 	public setThrottle : real ==> ()
 	setThrottle(throttle) == throttleTarget := throttle;
 	
-	public setAltitudeTarget : Vector`Vector3 ==> ()
+	public setAltitudeTarget : Types`Vector3 ==> ()
 	setAltitudeTarget(targetPos) == (
 		positionController.setTargetPosition(targetPos);
 		targetPosition := targetPos;
 	);
 	
-	public setWaypointTargets : seq of Vector`Vector3 ==> ()
+	public setWaypointTargets : seq of Types`Vector3 ==> ()
 	setWaypointTargets(wps) == (
 		targetPosition := hd wps;
 		waypointTargets := tl wps;

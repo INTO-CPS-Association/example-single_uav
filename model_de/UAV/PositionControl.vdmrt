@@ -5,7 +5,7 @@ values
 	FULL_THROTTLE = 100;
 	MAX_TOP_THROTTLE_GAIN  = FULL_THROTTLE - HOLD_ALTITUDE_THROTTLE;
 	-- Controllers: 
-	PID_P = 2.5;
+	PID_P = 5;
 	PID_I = 0.1;
 	PID_D = 1000;
 	
@@ -16,23 +16,23 @@ instance variables
 	sensorData : SF_GPS;
 	pController : P := new P(P_GAIN_VALUE_THROTTLE);
 	pidController : PID := new PID(PID_P, PID_I, PID_D, UAV`MAIN_LOOP_RATE);
-	targetPoint : Vector`Vector3;
+	targetPoint : Types`Vector3;
 	
 operations
 	public PositionControl : SF_GPS ==> PositionControl
 	PositionControl(gps) == sensorData := gps;
 	
-	public setTargetPosition : Vector`Vector3 ==> ()
+	public setTargetPosition : Types`Vector3 ==> ()
 	setTargetPosition(z) == ( 
 		targetPoint:=z;
 		pController.setTargetPoint(z.z);
 		pidController.setTargetPoint(z.z);
 	);
 	
-	public getPosition : () ==> Vector`Vector3
+	public getPosition : () ==> Types`Vector3
 	getPosition() == return sensorData.getPosition();
 	
-	public withinBounds : Vector`Vector3 * Vector`Vector3 ==> bool
+	public withinBounds : Types`Vector3 * Types`Vector3 ==> bool
 	withinBounds(pos1, pos2) == (
 		return abs(pos1.z - pos2.z) < 0.5; 
 	);

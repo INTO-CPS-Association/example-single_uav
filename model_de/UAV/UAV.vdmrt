@@ -26,7 +26,7 @@ operations
 		
 		--Fly to waypoints
 		flightController.setMode(<WAYPOINT>);
-		flightController.setWaypointTargets([mk_Vector`Vector3(1,2,3),mk_Vector`Vector3(2,4,2),mk_Vector`Vector3(2,4,4)]);
+		flightController.setWaypointTargets([mk_Types`Vector3(1,2,3),mk_Types`Vector3(2,4,2),mk_Types`Vector3(2,4,4)]);
 	);
 -- define periodic thread (nanoseconds)
 	loop: () ==> ()

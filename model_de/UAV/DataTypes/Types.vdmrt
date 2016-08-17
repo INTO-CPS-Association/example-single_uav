@@ -6,7 +6,13 @@ types
 	yaw : real
 	pitch : real
 	roll : real
-	throttle : Throttle
+	throttle : Throttle;
+	
+	public Vector3 ::
+	x : real
+	y : real
+	z : real
+	
 functions
 	public throttlePre : real -> bool
 	throttlePre(throttle) == 

@@ -11,13 +11,13 @@ instance variables
 	
 	-- Sampled data
 	-- x = roll, y = pitch, z := yaw 
-	velocityRs : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- r/s
+	velocityRs : Types`Vector3 := mk_Types`Vector3(0,0,0); -- r/s
 
 operations
 	public update : () ==> ()
-	update() == velocityRs := mk_Vector`Vector3(velocityRoll,velocityPitch,velocityYaw);
+	update() == velocityRs := mk_Types`Vector3(velocityRoll,velocityPitch,velocityYaw);
 	
-	public getVelocity : () ==> Vector`Vector3
+	public getVelocity : () ==> Types`Vector3
 	getVelocity() == return velocityRs;
 	
 
