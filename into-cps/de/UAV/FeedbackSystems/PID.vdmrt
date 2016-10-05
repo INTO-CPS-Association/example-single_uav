@@ -1,0 +1,43 @@
+class PID
+
+instance variables
+	targetPoint : real := 0;
+	kP : real := 0.0; -- Proportional gain constant
+	kI : real := 0.0; -- Integral constant
+	kD : real := 0.0; -- Derivative constant
+	lastErr : real := 0.0; -- error
+	intErr : real := 0.0; -- Integral from previous loop + error; (integral error)
+	dt : real := 0.0; -- Execution time of loop
+	
+
+operations
+	public PID : real * real * real * real ==> PID
+		PID(p,i,d,dtPar) == (
+			kP := p; 
+			kI := i;
+			kD := d; 
+			dt := dtPar;
+		); 
+		  
+	public setTargetPoint : real ==> ()
+		setTargetPoint(tp) == (
+		targetPoint := tp;
+		); 
+		
+	public update : real ==> real
+		update(av) == (	
+			let err = targetPoint - av,
+				dErr = (err - lastErr)
+				in 
+			(
+				intErr := intErr + (err * dt);
+				let output = kP * err + kI * intErr + kD * dErr in
+				(
+					IO`printf("P: %1$s i: %2$s  d: %3$s\n",[kP * err, kI * intErr, kD * dErr]);
+					lastErr := err;
+					return output;
+				)
+			)
+		);
+	
+end PID

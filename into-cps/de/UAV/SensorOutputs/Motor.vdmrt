@@ -1,0 +1,21 @@
+class Motor
+types
+values
+
+instance variables
+	-- Contract connection
+	--throttle : Types`Throttle := 0; -- [% of full throttle]
+	throttle : RealPort;
+operations
+	public Motor : RealPort ==> Motor
+	Motor (throttlehw) == throttle := throttlehw;
+	
+	public setThrottle : real ==> ()
+	setThrottle(thr) == throttle.setValue(thr)
+	pre Types`throttlePre(thr);
+
+functions
+
+traces
+
+end Motor

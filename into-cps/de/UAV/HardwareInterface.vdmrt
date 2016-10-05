@@ -1,0 +1,23 @@
+class HardwareInterface
+instance variables
+-- @ interface: type = input, name="locationLat";
+	public static locationLat : RealPort := new RealPort(0.0);
+	-- @ interface: type = input, name="locationLong";	
+	public static locationLong: RealPort := new RealPort(0.0);
+	-- @ interface: type = input, name="locationAlt";
+	public static locationAlt: RealPort := new RealPort(0.0);
+	-- @ interface: type = input, name="velocityX";
+	public static velocityX: RealPort := new RealPort(0.0);
+	-- @ interface: type = input, name="velocityY";
+	public static velocityY: RealPort := new RealPort(0.0);
+	-- @ interface: type = input, name="velocityZ";
+	public static velocityZ: RealPort := new RealPort(0.0);
+	-- @ interface: type = output, name="motor1";
+	public static throttle1 : RealPort := new RealPort(0.0);
+	-- @ interface: type = output, name="motor2";
+	public static throttle2 : RealPort := new RealPort(0.0);
+	-- @ interface: type = output, name="motor3";
+	public static throttle3 : RealPort := new RealPort(0.0);
+	-- @ interface: type = output, name="motor4";
+	public static throttle4 : RealPort := new RealPort(0.0);
+end HardwareInterface

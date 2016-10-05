@@ -1,0 +1,7 @@
+class SDPs
+values
+	public GRAVITY_MSS : real = 0.0; -- sdp
+	-- MAIN_LOOP_RATE is located in UAV.vdmrt
+	-- public MAIN_LOOP_RATE : real = 0.0; -- sdp
+	public USE_MPC : real = 0; -- sdp
+end SDPs

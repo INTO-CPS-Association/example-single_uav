@@ -1,0 +1,20 @@
+class Types
+types
+	public Throttle = real
+	inv throttle == throttlePre(throttle);
+	public MotorCommand ::
+	yaw : real
+	pitch : real
+	roll : real
+	throttle : Throttle;
+	
+	public Vector3 ::
+	x : real
+	y : real
+	z : real
+	
+functions
+	public throttlePre : real -> bool
+	throttlePre(throttle) == 
+		throttle >= 0.0 and throttle <= 100.0
+end Types
