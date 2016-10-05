@@ -1,0 +1,1 @@
+{"startTime":0,"endTime":30,"multimodel_path":"Multi-models\\mm-new (61)\\mm-new (61).mm.json","livestream":{"{ct}.ct":["gpsZ"]},"algorithm":{"type":"var-step","initsize":0.0005,"size":[0.0005,0.2],"constraints":{}}}
