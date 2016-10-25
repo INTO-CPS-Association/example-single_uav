@@ -1,0 +1,79 @@
+class DerivativeFilterTest is subclass of TestCase
+
+values
+	FILTER_SIZE = 7;
+	
+operations
+	
+	protected testSlopeOne: () ==> ()
+	testSlopeOne () == (
+		dcl filter : DerivativeFilter := new DerivativeFilter(FILTER_SIZE);
+		filter.update(1,1);
+		filter.update(2,2);
+		filter.update(3,3);
+		filter.update(4,4);
+		filter.update(5,5);
+		filter.update(6,6);
+		filter.update(7,7);
+
+		assertTrue(filter.slope() = 1);
+		
+	);
+
+	protected testSlopeTwo: () ==> ()
+	testSlopeTwo () == (
+		dcl filter : DerivativeFilter := new DerivativeFilter(FILTER_SIZE);
+		filter.update(1,1);
+		filter.update(3,2);
+		filter.update(5,3);
+		filter.update(7,4);
+		filter.update(9,5);
+		filter.update(11,6);
+		filter.update(13,7);
+
+		assertTrue(filter.slope() = 2);
+	);
+	
+	protected testSlopeOneHalf: () ==> ()
+	testSlopeOneHalf () == (
+		dcl filter : DerivativeFilter := new DerivativeFilter(FILTER_SIZE);
+		filter.update(1,1);
+		filter.update(1.5,2);
+		filter.update(2,3);
+		filter.update(2.5,4);
+		filter.update(3,5);
+		filter.update(3.5,6);
+		filter.update(4,7);
+
+		assertTrue(filter.slope() = 0.5);
+	);
+	
+	protected testSlopMinusOne: () ==> ()
+	testSlopMinusOne () == (
+		dcl filter : DerivativeFilter := new DerivativeFilter(FILTER_SIZE);
+		filter.update(5,1);
+		filter.update(4,2);
+		filter.update(3,3);
+		filter.update(2,4);
+		filter.update(1,5);
+		filter.update(0,6);
+		filter.update(-1,7);
+		--IO`printf("Slope: %s\n",[filter.slope()]);
+		assertTrue(filter.slope() = -1);
+	);
+	
+	protected testLargeTimesteps: () ==> ()
+	testLargeTimesteps () == (
+		dcl filter : DerivativeFilter := new DerivativeFilter(FILTER_SIZE);
+		filter.update(5,10);
+		filter.update(4,20);
+		filter.update(3,30);
+		filter.update(2,40);
+		filter.update(1,50);
+		filter.update(0,60);
+		filter.update(-1,70);
+		--IO`printf("Slope: %s\n",[filter.slope()]);
+		assertTrue(filter.slope() = -0.1);
+	);
+
+end DerivativeFilterTest

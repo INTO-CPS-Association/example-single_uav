@@ -1,0 +1,14 @@
+class AP_NavEKF
+
+instance variables
+	ahrs : AP_AHRS_NavEKF;
+	baro : AP_Baro;
+
+operations
+	public AP_NavEKF : AP_AHRS_NavEKF * AP_Baro ==> AP_NavEKF
+	AP_NavEKF (a,b) == (
+		ahrs := a;
+		baro := b;
+	);
+	
+end AP_NavEKF

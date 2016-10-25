@@ -1,0 +1,10 @@
+class Filter
+
+operations
+	public apply: real ==> real
+	apply(sample) == is subclass responsibility;
+	
+	public reset: () ==> ()
+	reset() == is subclass responsibility;
+
+end Filter

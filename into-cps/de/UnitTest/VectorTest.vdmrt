@@ -1,0 +1,54 @@
+class VectorTest is subclass of TestCase
+
+
+operations
+	
+	
+	protected testAdd: () ==> ()
+	testAdd () == (
+		dcl vec1 : Vector`Vector3 := mk_Vector`Vector3(1,2,3);
+		dcl vec2 : Vector`Vector3 := mk_Vector`Vector3(4,7,9);
+		
+		let res : Vector`Vector3 = Vector`add({vec1,vec2}) in
+		assertTrue(res = mk_Vector`Vector3(5,9,12));
+	);
+	
+	protected testAdd3: () ==> ()
+	testAdd3 () == (
+		dcl vec1 : Vector`Vector3 := mk_Vector`Vector3(1,2,3);
+		dcl vec2 : Vector`Vector3 := mk_Vector`Vector3(4,7,9);
+		dcl vec3 : Vector`Vector3 := mk_Vector`Vector3(11,2,2);
+		
+		let res : Vector`Vector3 = Vector`add({vec1,vec2,vec3}) in
+		assertTrue(res = mk_Vector`Vector3(16,11,14));
+	);
+	
+	protected testAddMinus: () ==> ()
+	testAddMinus () == (
+		dcl vec1 : Vector`Vector3 := mk_Vector`Vector3(1,2,3);
+		dcl vec2 : Vector`Vector3 := mk_Vector`Vector3(-4,-7,-9);
+		dcl vec3 : Vector`Vector3 := mk_Vector`Vector3(11,2,2);
+		
+		let res : Vector`Vector3 = Vector`add({vec1,vec2,vec3}) in
+		assertTrue(res = mk_Vector`Vector3(8,-3,-4));
+	);
+
+	protected testDivide: () ==> ()
+	testDivide () == (
+		dcl vec1 : Vector`Vector3 := mk_Vector`Vector3(4.5,-12,9);
+		
+		let res : Vector`Vector3 = Vector`divide(vec1,3) in
+		assertTrue(res = mk_Vector`Vector3(1.5,-4,3));
+	);
+
+	protected testMultiply: () ==> ()
+	testMultiply () == (
+		dcl vec1 : Vector`Vector3 := mk_Vector`Vector3(4.5,-12,9);
+		
+		let res : Vector`Vector3 = Vector`multiply(vec1,3) in
+		assertTrue(res = mk_Vector`Vector3(13.5,-36,27));
+	);
+	
+	-- TODO add tests for pytaghoras and atan2.
+
+end VectorTest

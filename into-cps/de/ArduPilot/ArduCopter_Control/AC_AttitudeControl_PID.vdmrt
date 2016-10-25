@@ -1,0 +1,254 @@
+class AC_AttitudeControl_PID is subclass of AC_AttitudeControl
+
+instance variables
+	pAngleRoll 		: AC_P;
+	pAnglePitch 	: AC_P;
+	pAngleYaw 		: AC_P;
+	pidRateRoll 	: AC_PID;
+	pidRatePitch 	: AC_PID;
+	pidRateYaw 		: AC_PID;
+	
+	angleEfTarget : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	rateBfTarget : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	rateEfDesired : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+
+operations
+-- TODO: Should PID and P be instantiated in Parameters?
+	public AC_AttitudeControl_PID : AP_AHRS * AP_Motors  ==> AC_AttitudeControl_PID
+	AC_AttitudeControl_PID(ahr, motor) == (
+		ahrs := ahr;
+		motors := motor;
+		
+		pAngleRoll := new AC_P(ROLL_P);
+		pAnglePitch := new AC_P(PITCH_P);
+		pAngleYaw := new AC_P(YAW_P);
+		
+		pidRateRoll := new AC_PID(RATE_ROLL_P, RATE_ROLL_I, RATE_ROLL_D, RATE_ROLL_IMAX, RATE_ROLL_FILT_HZ, ArduCopter`MAIN_LOOP_RATE);
+		pidRatePitch := new AC_PID(RATE_PITCH_P, RATE_PITCH_I, RATE_PITCH_D, RATE_PITCH_IMAX, RATE_PITCH_FILT_HZ, ArduCopter`MAIN_LOOP_RATE);
+		pidRateYaw := new AC_PID(RATE_YAW_P, RATE_YAW_I, RATE_YAW_D, RATE_YAW_IMAX, RATE_YAW_FILT_HZ, ArduCopter`MAIN_LOOP_RATE);
+	);
+
+	public rate_controller_run: () ==> ()
+	rate_controller_run() == (
+		-- Lowest level body-frame rate controllers that only use IMU data.
+		--IO`printf("ahrs: roll: %s, pitch: %s, yaw: %s\n",[ahrs.rollCd,ahrs.pitchCd,ahrs.yawCd]);
+		--IO`printf("Motor rates: roll: %s, pitch: %s, yaw: %s\n",[rateBfTarget.x,rateBfTarget.y,rateBfTarget.z]);
+		motors.setRoll(rateBfToMotorRoll(rateBfTarget.x));
+		motors.setPitch(rateBfToMotorPitch(rateBfTarget.y));
+		motors.setYaw(rateBfToMotorYaw(rateBfTarget.z));
+	);
+	
+	--------- RATE CONTROLLERS ------------
+	rateBfToMotorRoll: real ==> real
+	rateBfToMotorRoll(targetRate) == (
+		dcl currentRate : real := AP_Math`radToCentiDegrees(ahrs.getGyro().x),
+			rateError : real := targetRate - currentRate,
+			i :real := 0;
+			
+		pidRateRoll.setInputFilterD(rateError);
+		
+		i := pidRateRoll.getIntegrator();
+			if not motors.getRollPitchLimit() or ((i>0 and rateError<0) or (i<0 and rateError>0)) then
+				i := pidRateRoll.getI();
+		
+		let p = pidRateRoll.getP() in
+
+		let d = pidRateRoll.getD() in
+
+		return AP_Math`constrain(p+i+d, -RATE_RP_CONTROLLER_OUT_MAX, RATE_RP_CONTROLLER_OUT_MAX);
+	);
+	
+	rateBfToMotorPitch: real ==> real
+	rateBfToMotorPitch(targetRate) == (
+		dcl currentRate : real := AP_Math`radToCentiDegrees(ahrs.getGyro().y),
+			rateError : real := targetRate - currentRate,
+			i :real := 0;
+			
+		pidRatePitch.setInputFilterD(rateError);
+		
+		i := pidRatePitch.getIntegrator();
+			if not motors.getRollPitchLimit() or ((i>0 and rateError<0) or (i<0 and rateError>0)) then
+				i := pidRatePitch.getI();
+		
+		let p = pidRatePitch.getP() in
+
+		let d = pidRatePitch.getD() in
+
+		return AP_Math`constrain(p+i+d, -RATE_RP_CONTROLLER_OUT_MAX, RATE_RP_CONTROLLER_OUT_MAX);
+	);
+	
+	rateBfToMotorYaw: real ==> real
+	rateBfToMotorYaw(targetRate) == (
+		dcl currentRate : real :=  AP_Math`radToCentiDegrees(ahrs.getGyro().z),
+			rateError : real := targetRate - currentRate,
+			i :real := 0;
+			
+		pidRateYaw.setInputFilterAll(rateError);
+		
+		i := pidRateYaw.getIntegrator();
+			if not motors.getYawLimit() or ((i>0 and rateError<0) or (i<0 and rateError>0)) then
+				i := pidRateYaw.getI();
+		
+		let p = pidRateYaw.getP() in
+
+		let d = pidRateYaw.getD() in
+		(
+			--IO`printf("Time: %s, Current: %s, target: %s, error: %s, pid: %s.\r",[time, currentRate,targetRate,rateError,p+i+d]);
+			return AP_Math`constrain(p+i+d, -RATE_YAW_CONTROLLER_OUT_MAX, RATE_YAW_CONTROLLER_OUT_MAX);
+		)
+	);
+	
+
+	--------- ORIENTATION CONTROLLERS ------------
+	
+	public update : real * real * real * real ==> ()
+	update(roll,pitch,yawRate,smoothingGain) == angleEfRollPitchRateEfYawSmooth(roll,pitch,yawRate,smoothingGain);
+	
+	public angleEfRollPitchRateEfYawSmooth : real * real * real * real ==> ()
+	angleEfRollPitchRateEfYawSmooth(roll, pitch, yawRate, smoothingGain) ==
+	(
+	-- Note all angles and rates are in centi degrees
+		dcl angleEfError : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+		
+	---- Roll angle and error ----
+		-- Calculate desired rate using feedforward
+		let rateDesired : real = SqrtController`sqrtController(roll-angleEfTarget.x, smoothingGain, ACCEL_ROLL_MAX),
+		rateChangeLimit : real = ACCEL_ROLL_MAX * ArduCopter`MAIN_LOOP_RATE in
+			 -- Apply limit to roll rate
+			 rateEfDesired.x := AP_Math`constrain(rateDesired, rateEfDesired.x-rateChangeLimit, rateEfDesired.x+rateChangeLimit);
+		-- Update roll angle target based on roll rate desired
+		 angleEfError.x := updateEfRollAngleAndError(rateEfDesired.x, RATE_STAB_ROLL_OVERSHOOT_ANGLE_MAX);
+		 -- Limit angle target
+		 angleEfTarget.x := AP_Math`constrain(angleEfTarget.x, -ANGLE_MAX, ANGLE_MAX);
+		
+	---- Pitch angle and error ----
+		-- Calculate desired rate using feedforward
+		let rateDesired : real = SqrtController`sqrtController(pitch-angleEfTarget.y, smoothingGain, ACCEL_PITCH_MAX),
+		rateChangeLimit : real = ACCEL_PITCH_MAX * ArduCopter`MAIN_LOOP_RATE in
+			 -- Apply limit to pitch rate
+			 rateEfDesired.y := AP_Math`constrain(rateDesired, rateEfDesired.y-rateChangeLimit, rateEfDesired.y+rateChangeLimit);
+		-- Update pitch angle target based on pitch rate desired
+		 angleEfError.y := updateEfPitchAngleAndError(rateEfDesired.y, RATE_STAB_PITCH_OVERSHOOT_ANGLE_MAX);
+		 -- Limit angle target
+		 angleEfTarget.y := AP_Math`constrain(angleEfTarget.y, -ANGLE_MAX, ANGLE_MAX);
+		
+	---- Yaw angle and error ----
+		let rateChangeLimit : real = ACCEL_YAW_MAX * ArduCopter`MAIN_LOOP_RATE in
+			-- update yaw rate target with accel limits
+			rateEfDesired.z := rateEfDesired.z + AP_Math`constrain(yawRate - rateEfDesired.z, -rateChangeLimit, rateChangeLimit);
+		
+		angleEfError.z := updateEfYawAngleAndError(rateEfDesired.z, RATE_STAB_YAW_OVERSHOOT_ANGLE_MAX);
+--		IO`printf("Angle Errors: x: %s, y: %s, z: %s\n Time: %s\n\r",[angleEfError.x,angleEfError.y,angleEfError.z,time]);
+	---- Convert to body frame ----
+		let angleBfError : Vector`Vector3 = frameConversionEfToBf(angleEfError) in
+	---- Convert errors to body frame rate targets ----
+			updateRateBfTarget(angleBfError);
+			
+	)
+	pre smoothingGain >= 1 and smoothingGain <= 50;
+	
+	private updateEfRollAngleAndError : real * real ==> real
+	updateEfRollAngleAndError(rollRateEf, maxOvershoot) == 
+	(
+		-- Calculate angle error within +-max overshoot
+		dcl angleEfError : real := AP_Math`constrain(AP_Math`wrap180Cd(angleEfTarget.x - ahrs.rollCd), -maxOvershoot, maxOvershoot);
+		--IO`printf("angleEfTarget.x : %s, ahrs roll: %s, angleEfError: %s, time: %s\n\r",[angleEfTarget.x,ahrs.rollCd,angleEfError,time]);
+		-- Update target to be within max overshoot from the current angle
+		angleEfTarget.x := angleEfError + ahrs.rollCd;
+		-- increment angle target
+		angleEfTarget.x := AP_Math`wrap180Cd(angleEfTarget.x + rollRateEf * ArduCopter`MAIN_LOOP_RATE);
+		
+		return angleEfError; 
+	);
+	
+	private updateEfPitchAngleAndError : real * real ==> real
+	updateEfPitchAngleAndError(pitchRateEf, maxOvershoot) == 
+	(
+		-- Calculate angle error within +-max overshoot
+		dcl angleEfError : real := AP_Math`constrain(AP_Math`wrap180Cd(angleEfTarget.y - ahrs.pitchCd), -maxOvershoot, maxOvershoot);
+		-- Update target to be within max overshoot from the current angle
+		angleEfTarget.y := angleEfError + ahrs.pitchCd;
+		-- increment angle target
+		angleEfTarget.y := AP_Math`wrap180Cd(angleEfTarget.y + pitchRateEf * ArduCopter`MAIN_LOOP_RATE);
+		
+		return angleEfError; 
+	);
+	
+	private updateEfYawAngleAndError : real * real ==> real
+	updateEfYawAngleAndError(yawRateEf, maxOvershoot) == 
+	(
+		-- Calculate angle error within +-max overshoot
+		dcl angleEfError : real := AP_Math`constrain(AP_Math`wrap180Cd(angleEfTarget.z - ahrs.yawCd), -maxOvershoot, maxOvershoot);
+		-- Update target to be within max overshoot from the current angle
+		angleEfTarget.z := angleEfError + ahrs.yawCd;
+		-- increment angle target
+		angleEfTarget.z := AP_Math`wrap180Cd(angleEfTarget.z + yawRateEf * ArduCopter`MAIN_LOOP_RATE);
+		return angleEfError; 
+	);
+	
+	private frameConversionEfToBf : Vector`Vector3 ==> Vector`Vector3
+	frameConversionEfToBf(efVector) ==
+	(
+		-- Convert earth frame vector to body frame vector
+		dcl bfVector : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+		bfVector.x := efVector.x - ahrs.sinPitch * efVector.z;
+		bfVector.y := ahrs.cosRoll  * efVector.y + ahrs.sinRoll * ahrs.cosPitch * efVector.z;
+		bfVector.z := -ahrs.sinRoll * efVector.y + ahrs.cosPitch * ahrs.cosRoll * efVector.z;
+		--IO`printf("bffVector: x: %s, y: %s, z: %s, time: %s\n\r",[bfVector.x,bfVector.y,bfVector.z,time]);
+		return bfVector;
+	);
+	
+	private updateRateBfTarget : Vector`Vector3 ==> ()
+	updateRateBfTarget(angleBfError) ==
+	(
+		-- Roll
+		rateBfTarget.x := pAngleRoll.getP(angleBfError.x) + angleBfError.y * ahrs.getGyro().z;
+		--Pitch
+		rateBfTarget.y := pAnglePitch.getP(angleBfError.y) - angleBfError.x * ahrs.getGyro().z;
+		--Yaw
+		rateBfTarget.z := pAngleYaw.getP(angleBfError.z);
+	);
+	
+
+values	
+	-- Rate controllers:
+	RATE_ROLL_P   		= 0.5; --0.168; --0.5
+	RATE_ROLL_I       	= 0.031; --0.654; --0.031;
+	RATE_ROLL_D       	= 0.009; --0.008; --0.009;
+	RATE_ROLL_IMAX   	= 200;
+	RATE_ROLL_FILT_HZ 	= 20.0;
+	 
+	RATE_PITCH_P      	= 0.5; --0.168; --0.5;
+	RATE_PITCH_I      	= 0.031; --0.654; --0.031;
+	RATE_PITCH_D      	= 0.009; --0.008; --0.009;
+	RATE_PITCH_IMAX   	= 200;
+	RATE_PITCH_FILT_HZ	= 20.0;
+	
+	RATE_YAW_P        	= 0.200;
+	RATE_YAW_I        	= 0.020;
+	RATE_YAW_D        	= 0.000;
+	RATE_YAW_IMAX     	= 100;
+	RATE_YAW_FILT_HZ  	= 5.0;
+  
+   	RATE_RP_CONTROLLER_OUT_MAX   = 18000.0; -- body-frame rate controller maximum output (for roll-pitch axis)
+ 	RATE_YAW_CONTROLLER_OUT_MAX  = 9000.0; -- body-frame rate controller maximum output (for yaw axis)
+ 	
+ 	-- Orientation controller gains:
+	ROLL_P				= 3.77;
+	PITCH_P				= 3.77;
+	YAW_P				= 6;
+	
+	-- Minimum maximum values. Real maximum should be tuned...
+	ACCEL_ROLL_MAX 		= 162000;
+	ACCEL_PITCH_MAX 	= 162000;
+	ACCEL_YAW_MAX 		= 75000;
+	
+	-- Maximum rate stabilize controller overshoot angle
+	RATE_STAB_ROLL_OVERSHOOT_ANGLE_MAX 	= 30000;
+	RATE_STAB_PITCH_OVERSHOOT_ANGLE_MAX = 30000;
+	RATE_STAB_YAW_OVERSHOOT_ANGLE_MAX 	= 1000;
+
+	-- Vehicle definition: maximum roll/pitch angles:
+	ANGLE_MAX 			= 9000; -- This is a pure guess! It is probably set from an externally source, and is not present in the Ardupilot stack.
+
+end AC_AttitudeControl_PID

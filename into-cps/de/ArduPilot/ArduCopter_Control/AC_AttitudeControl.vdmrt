@@ -1,0 +1,36 @@
+class AC_AttitudeControl
+
+instance variables
+	protected ahrs			: AP_AHRS;
+	protected motors		: AP_Motors;
+
+operations
+	public update : real * real * real * real ==> ()
+	update(roll,pitch,yawRate,smoothingGain) == is subclass responsibility;
+	
+	public rate_controller_run : () ==> ()
+	rate_controller_run() == is subclass responsibility;
+	
+	------------- THROTTLE ----------------
+	
+	public setThrottleOut : real * bool ==> ()
+	setThrottleOut(throttleOut, angleBoost) ==
+		if angleBoost then
+			motors.setThrottle(getAngleBoost(throttleOut))
+		else
+			motors.setThrottle(throttleOut);
+	
+	-- Returns throttle including compensation for roll and pitch angles! 
+	getAngleBoost: real ==> real
+	getAngleBoost(throttlePwm) ==
+	(
+		dcl
+		min_throttle: real := AP_MotorsQuad`THROTTLE_MIN,
+		cos_tilt : real := ahrs.cosPitch * ahrs.cosRoll,
+		inverted_factor: real := AP_Math`constrain(2*cos_tilt,0,1),
+		boost_factor: real:= 1/AP_Math`constrain(cos_tilt, 0.5, 1);
+		
+		return (throttlePwm-min_throttle)*inverted_factor*boost_factor + min_throttle;
+	);
+
+end AC_AttitudeControl

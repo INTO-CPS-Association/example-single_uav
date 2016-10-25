@@ -1,0 +1,53 @@
+-- Inertial Navigation provides data with reference to the earth fixed frame North-East-Up
+class AP_InertialNav_NavEKF
+
+instance variables
+	ahrs : AP_AHRS_NavEKF;
+	absPos : Navigation`Location := mk_Navigation`Location(0,0,0);
+	pos : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- Position in cm
+	vel : Vector`Vector3 := mk_Vector`Vector3(0,0,0); -- Velocity in cm/s
+
+operations
+	public AP_InertialNav_NavEKF: AP_AHRS_NavEKF ==> AP_InertialNav_NavEKF
+	AP_InertialNav_NavEKF(a) == (
+		ahrs := a;
+	);
+	
+	public update : () ==> ()
+	update() == (
+		-- TODO: get position and velocity from ahrs using NavEKF!
+		vel := ahrs.getVelocity(); -- R&D cheat
+		absPos := ahrs.getGpsLocation();
+		-- Conversion from NED to NEU
+		vel.z := -vel.z;
+		absPos.alt := -absPos.alt; 
+	);
+	
+	public getLattitude: () ==> real
+	getLattitude() == (
+		return absPos.lat;
+	);
+	
+	public getLongitude: () ==> real
+	getLongitude() == (
+		return absPos.long;
+	);
+	
+	public getAltitude: () ==> real
+	getAltitude() == (
+		return absPos.alt * 100; -- convert from m/s to cm/s
+	);
+	
+	public getPosition: () ==> Vector`Vector3
+	getPosition() == (
+		return pos;
+	);
+	
+	public getOrigin: () ==> Navigation`Location
+	getOrigin() == return mk_Navigation`Location(0,0,0);
+	
+	public getVelocity : () ==> Vector`Vector3
+	getVelocity() == return Vector`multiply(vel,100); -- convert from m/s to cm/s
+	
+	
+end AP_InertialNav_NavEKF

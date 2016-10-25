@@ -1,0 +1,19 @@
+system ArduPilot
+
+instance variables
+
+public static arduCopter: ArduCopter := new ArduCopter();
+public static hwi: HardwareInterface := new HardwareInterface();
+
+-- architecture definition
+cpu : CPU := new CPU(<FP>, 168E6); -- PixHawk: 168MHz Cortex M4F CPU
+	
+operations
+
+public ArduPilot: () ==> ArduPilot
+ArduPilot() == (
+  -- deploy ArduCopter
+  cpu.deploy(arduCopter, "ArduCopter")
+)
+
+end ArduPilot

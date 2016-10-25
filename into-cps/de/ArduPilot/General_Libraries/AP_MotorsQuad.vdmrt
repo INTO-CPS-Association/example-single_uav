@@ -1,0 +1,163 @@
+class AP_MotorsQuad is subclass of AP_Motors
+
+values
+	CLOCKWISE = -1;
+	COUNTERCLOCKWISE = 1;
+
+	-- TODO: verfiy these values! - Should they be variables!?
+	RADIO_MIN = 1000;
+	RADIO_MAX = 2000;
+	public THROTTLE_MIN = 10;
+	public THROTTLE_MAX = 1000;
+	
+	-- Hover throttle in promille -> 0-1000.
+	--public THROTTLE_HOVER = 400;-- Real flight value;
+	public THROTTLE_HOVER = 650; -- Testbed value
+	
+	thrustCurveExpo = 0.5;
+	thrustCurveMax = 0.95;
+instance variables
+
+	protected motor1: RealPort := HardwareInterface`throttle1;	
+	protected motor2: RealPort := HardwareInterface`throttle2;	
+	protected motor3: RealPort := HardwareInterface`throttle3;	
+	protected motor4: RealPort := HardwareInterface`throttle4;
+
+operations
+	public AP_MotorsQuad: () ==> AP_MotorsQuad
+	AP_MotorsQuad() == 
+	(
+		-- Only support x-configuration: Carillo13
+		addMotor(1, 45, CLOCKWISE);
+		addMotor(2, -45, COUNTERCLOCKWISE);
+		addMotor(3, -135, CLOCKWISE);
+		addMotor(4, 135, COUNTERCLOCKWISE);
+		
+	);
+	
+	public output_armed : () ==> ()
+    output_armed() == (
+    	-- TODO: Add pilot input? and battery voltage compensation gain
+    	dcl motorsOut : seq of real := [0*i|i in set {1,...,maxMotors}]; 
+    	
+    	-- Used to store highest and lowest value of motorsOut:
+    	dcl rpyLow : real := 0;
+    	dcl rpyHigh : real := 0;
+    	dcl rpyScale : real := 1;
+    	-- Best throttle pwm output 
+    	dcl outBestThrottlePwm : real := 0;
+    	-- Difference between pilot's desired throttle and outBestThrottlePwm
+    	dcl throttleAdj : real := 0;
+    	dcl throttleAdjMin : real := 0;
+    	dcl throttleAdjMax : real := 0;
+    	
+    	--IO`printf("Motor rates: roll: %s, pitch: %s, yaw: %s\n",[roll, pitch, yaw]);
+    	
+    	-- Calculate roll and pitch:
+    	for all i in set {1,...,maxMotors} do
+    		motorsOut(i) := roll * rollFactor(i) + pitch * pitchFactor(i);
+    		--IO`printf("time: %s. motorsout: %s, %s, %s, %s.\n",[time, motorsOut(1),motorsOut(2),motorsOut(3), motorsOut(4)]);
+    	--IO`printf("Motor setpoints: 1: %s, 2: %s, 3: %s, 4: %s\n",[motorsOut(1),motorsOut(2),motorsOut(3),motorsOut(4)]);
+    	-- Calculate min and max:
+    	rpyLow := AP_Math`min(elems motorsOut);
+    	rpyHigh := AP_Math`max(elems motorsOut);
+    	
+    	-- Calculate best throttle:
+    	outBestThrottlePwm := bestThrottle(rpyLow, rpyHigh);
+    	-- Calculate allowed yaw:
+    	-- TODO: _yaw_headroom is a tuned parameter and is not included!    	
+    	let allowedYaw : real = AP_Math`min({RADIO_MAX - outBestThrottlePwm, outBestThrottlePwm - (RADIO_MIN - THROTTLE_MIN)}) - (rpyHigh-rpyLow)/2 in
+    		-- limit yaw if necessary
+    		if (allowedYaw < 0 ) then
+    			yaw := AP_Math`constrain(yaw, allowedYaw, -allowedYaw)
+    		else
+    			yaw := AP_Math`constrain(yaw, -allowedYaw, allowedYaw);
+    	-- Calculate yaw:
+    	for all i in set {1,...,maxMotors} do
+    		motorsOut(i) := motorsOut(i) + yaw * yawFactor(i);
+    		--IO`printf("time: %s. motorsout: %s, %s, %s, %s.\n",[time, motorsOut(1),motorsOut(2),motorsOut(3), motorsOut(4)]);
+    	--IO`printf("Time: %s, Roll: %s, Pitch %s, Yaw %s.\n",[time,roll,pitch,yaw]);
+    	 
+    	-- Calculate min and max again:
+    	rpyLow := AP_Math`min(elems motorsOut);
+    	rpyHigh := AP_Math`max(elems motorsOut);
+    	
+    	-- Check everything fits
+    	throttleAdj := throttle - outBestThrottlePwm;
+    	throttleAdjMax := AP_Math`max({RADIO_MAX - (outBestThrottlePwm + rpyHigh),0});
+    	throttleAdjMin := AP_Math`min({RADIO_MIN - (outBestThrottlePwm + rpyLow),0});
+    	
+    	throttleAdj := AP_Math`min({throttleAdj,throttleAdjMax});
+    	if throttleAdj < 0 then
+    		throttleAdj := AP_Math`max({throttleAdj,throttleAdjMin});
+    	
+    	-- Calculate scale roll pitch and yaw:
+    	if rpyLow+outBestThrottlePwm+throttleAdj < RADIO_MIN+THROTTLE_MIN and not rpyLow = 0 then
+    		rpyScale := (RADIO_MIN+THROTTLE_MIN - throttleAdj - outBestThrottlePwm)/rpyLow
+    	elseif rpyHigh+outBestThrottlePwm+throttleAdj > RADIO_MAX and not rpyHigh = 0 then
+    		rpyScale := (RADIO_MAX - throttleAdj - outBestThrottlePwm)/rpyHigh;
+    	-- Apply scale
+    	for all i in set {1,...,maxMotors} do
+    		motorsOut(i) := outBestThrottlePwm + throttleAdj + rpyScale * motorsOut(i);
+    		--IO`printf("time: %s. motorsout: %s, %s, %s, %s.\n",[time, motorsOut(1),motorsOut(2),motorsOut(3), motorsOut(4)]);
+    	-- Apply thrust curve and voltage scaling
+    	for all i in set {1,...,maxMotors} do
+    		motorsOut(i) := applyThrustCurveAndVoltageScaling(motorsOut(i),RADIO_MIN+THROTTLE_MIN,RADIO_MAX);
+    		--IO`printf("time: %s. motorsout: %s, %s, %s, %s.\n",[time, motorsOut(1),motorsOut(2),motorsOut(3), motorsOut(4)]);
+    	-- Clip motor output
+    	for all i in set {1,...,maxMotors} do
+    		motorsOut(i) := AP_Math`constrain(motorsOut(i),RADIO_MIN+THROTTLE_MIN,RADIO_MAX);
+    		--IO`printf("time: %s. motorsout: %s, %s, %s, %s.\n",[time, motorsOut(1),motorsOut(2),motorsOut(3), motorsOut(4)]);
+    	-- Send output to motors:
+    	
+    	--IO`printf("Motor outputs: %s, %s, %s, %s.\n",[motorsOut(1),motorsOut(2),motorsOut(3),motorsOut(4)]); 
+    	
+    	motor1.setValue(convertPwmToCtModelInput(motorsOut(1)));
+    	motor2.setValue(convertPwmToCtModelInput(motorsOut(2)));
+    	motor3.setValue(convertPwmToCtModelInput(motorsOut(3)));
+    	motor4.setValue(convertPwmToCtModelInput(motorsOut(4)));
+	);
+	
+	bestThrottle : real * real ==> real
+	bestThrottle(rpyLow, rpyHigh) ==
+	(
+		let motorMiddle : real = (rpyLow + rpyHigh)/2 in
+		let throttleLowComp : real = 0.5 in
+		let outPwmMid : real = (RADIO_MIN + THROTTLE_MIN + RADIO_MAX)/2 in
+		let throttleHoverAsPwm : real = RADIO_MIN + (RADIO_MAX - RADIO_MIN) * THROTTLE_HOVER/1000 in
+			return AP_Math`min({outPwmMid - motorMiddle, AP_Math`max({throttle, throttle * AP_Math`max({0, 1-throttleLowComp}) + throttleHoverAsPwm * throttleLowComp})});
+			--return throttleHoverAsPwm; -- Used for testbed simulation!
+	);
+	
+	applyThrustCurveAndVoltageScaling : real * real * real ==> real
+	applyThrustCurveAndVoltageScaling(out, min, max) == 
+	(
+		dcl tempOut : real := (out-min)/(max-min); -- This will give a linear conversion from pwm to thrust
+		if thrustCurveExpo > 0 then
+			skip;
+			-- TODO: calculate liftMax - used for battery voltage scaling
+			--tempOut := (thrustCurveExpo - 1 + AP_Math`safeSqrt((1-thrustCurveExpo)*(1-thrustCurveExpo) + 4*thrustCurveExpo*liftMax*tempOut*battVoltageFilt);
+		
+		return AP_Math`constrain(tempOut*thrustCurveMax*(max-min)+min, min, max);
+	);
+	
+	
+	private addMotor : nat * int * int ==> ()
+	addMotor(motorNumber, angleDegrees, yawFact) ==
+	(
+		rollFactor(motorNumber) := MATH`cos(AP_Math`radians(angleDegrees + 90));
+		pitchFactor(motorNumber) := MATH`cos(AP_Math`radians(angleDegrees));
+		yawFactor(motorNumber) := yawFact;
+	)
+	pre motorNumber in set inds rollFactor and motorNumber in set inds pitchFactor and motorNumber in set inds yawFactor;
+
+functions
+	convertPwmToCtModelInput : real -> real
+	convertPwmToCtModelInput(pwm) ==
+	(
+		-- Pwm is in the range 1000-2000
+		-- CT model range is 0-100
+		pwm*0.1 - 100
+	);
+	
+end AP_MotorsQuad

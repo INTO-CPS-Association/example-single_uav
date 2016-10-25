@@ -1,0 +1,122 @@
+class AC_PID
+
+instance variables
+	kp : real;
+	ki : real;
+	kd : real;
+	
+	iMax : real;
+	filtHz : real := 0;
+	alpha: real := 0;
+	
+	dt : real; -- seconds
+	integrator : real;
+	derivative : real;
+	
+	input : real;
+	
+	resetFilter : bool;
+
+operations
+	public AC_PID: real * real * real * real * real * real ==> AC_PID
+	AC_PID(p, i, d, imax, filterHz, timestep) == (
+		kp := p;
+		ki := i;
+		kd := d;
+		iMax := imax;
+		dt := timestep;
+		integrator := 0;
+		derivative := 0;
+		input := 0;
+		setFiltHz(filterHz);
+		resetFilter := true;
+	); 
+
+	setFiltHz: nat ==> ()
+	setFiltHz(hz) == (
+		filtHz := hz;
+		
+		if filtHz < AC_PID_FILT_HZ_MIN then
+			filtHz := AC_PID_FILT_HZ_MIN; 
+		
+		calcAlpha();	
+	);
+	
+	calcAlpha: () ==> ()
+	calcAlpha() == (
+		let rc = 1/(2*MATH`pi*filtHz) in
+			alpha := dt/(dt+rc);
+	);
+	
+	checkFilter: () ==> ()
+	checkFilter() == (
+		if resetFilter = true then
+		(
+			resetFilter := false;
+			input := 0;
+			derivative := 0;
+		)
+	);
+	
+	resetI: () ==> ()
+	resetI() == integrator := 0;
+	
+	
+	public setInputFilterAll: real ==> ()
+	setInputFilterAll(inp) == (
+		checkFilter();
+		
+		let inputChange: real = alpha * (inp - input) in
+		(
+			input := input + inputChange;
+			if dt > 0 then
+				derivative := inputChange / dt;
+		)
+	);
+	
+	public setInputFilterD: real ==> ()
+	setInputFilterD(inp) == (
+		checkFilter();
+		
+		if dt > 0 then
+	        let deriv = (inp - input) / dt in
+	        	derivative := derivative + alpha * (deriv-derivative);
+    	
+    	input := inp;
+	);
+		
+	public getP: () ==> real
+	getP() == return input * kp;
+	
+	public getI: () ==> real
+	getI() == (
+		if ki <> 0 and dt <> 0 then
+		( 
+			integrator := integrator + input * ki * dt;
+			-- Limit integrator
+			if integrator < -iMax then
+				integrator := -iMax
+			elseif integrator > iMax then
+				integrator := iMax;
+			
+			return integrator;
+		);
+		return 0;
+	);
+	
+	public getD: () ==> real
+	getD() == return input * kd;
+	
+	public getPI: () ==> real
+	getPI() == return getP() + getI();
+	
+	public getPID: () ==> real
+	getPID() == return getP() + getI() + getD();
+	
+	public getIntegrator: () ==> real
+	getIntegrator() == return integrator;
+	
+values
+	AC_PID_FILT_HZ_MIN = 0.01;
+
+end AC_PID

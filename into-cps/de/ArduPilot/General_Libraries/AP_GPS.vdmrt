@@ -1,0 +1,41 @@
+-- All measurements are NED 
+class AP_GPS
+
+instance variables
+	
+	-- Contract connections
+	-- TODO: units!?
+	locationLat 	: RealPort := HardwareInterface`locationLat;
+	locationLong 	: RealPort := HardwareInterface`locationLong;
+	locationAlt 	: RealPort := HardwareInterface`locationAlt;
+	--grdSpd		: real := 0;
+	--grdCrsCd	: real := 0;
+	velocityX	: RealPort := HardwareInterface`velocityX;
+	velocityY	: RealPort := HardwareInterface`velocityY;
+	velocityZ	: RealPort := HardwareInterface`velocityZ;
+	
+	-- Sampled values
+	location		: Navigation`Location := mk_Navigation`Location(0,0,0);
+	--groundSpeed 	: real := 0;
+	--groundCourseCd 	: real := 0;
+	velocity 		: Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+
+operations
+	public update: () ==> ()
+	update() == (
+		location.lat := locationLat.getValue();
+		location.long := locationLong.getValue();
+		location.alt := locationAlt.getValue();
+		--groundSpeed := grdSpd;
+		--groundCourseCd := grdCrsCd;
+		velocity.x := velocityX.getValue();
+		velocity.y := velocityY.getValue();
+		velocity.z := velocityZ.getValue();
+	);
+	
+	public getLocation : () ==> Navigation`Location
+	getLocation() == return location;
+	
+	public getVelocity : () ==> Vector`Vector3
+	getVelocity() == return velocity;
+end AP_GPS

@@ -1,0 +1,74 @@
+-- All measurements are with reference to the body-frame
+class AP_InertialSensor 
+-- Things abstracted away:
+-- Calibration, health, 
+
+--values
+	--initReadings : seq of Vector`Vector3 = [Vector`zero() | i in set {1,2}];
+	
+instance variables
+	-- Contract connections:
+	-- Gyro readings: milli degrees
+	public gyroRateX : RealPort := HardwareInterface`gyroX;
+	public gyroRateY : RealPort := HardwareInterface`gyroY;
+	public gyroRateZ : RealPort := HardwareInterface`gyroZ;
+	--public gyroDeltaAngles : seq of Vector`Vector3 :=  initReadings;
+	
+	-- Accel readings: Two accels
+	accelX : RealPort := HardwareInterface`accelerometerX;
+	accelY : RealPort := HardwareInterface`accelerometerY;
+	accelZ : RealPort := HardwareInterface`accelerometerZ;
+	--public accelDeltaVelocitys : seq of Vector`Vector3 := initReadings;
+	
+	-- Sampled values:
+	-- Gyro readings: Two gyros
+	--gyros : seq of Vector`Vector3 := initReadings;
+	gyros : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	--deltaAngles : seq of Vector`Vector3 :=  initReadings;
+	
+	-- Accel readings: Two accels
+	accels : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	--accels : seq of Vector`Vector3 :=  initReadings;
+	--deltaVelocitys : seq of Vector`Vector3 := initReadings;
+
+
+operations
+	public read: () ==> ()
+	read() == (	
+		-- TODO:
+		--Gyros: AP_InertialSensor_Px4 -> _new_gyro_sample
+		-- Get x, y, z.
+		-- Rotate and offset
+		-- 2nd order lowpass filtering
+		-- Calc delta angle
+		-- Calc coning correction
+		
+		--Accels:
+		-- Get x, y, z.
+		-- Rotate, scale and offset
+		-- 2nd order lowpass filtering
+		-- Calc delta velocity
+		
+		-- Dummy implementation
+		
+		
+		gyros.x := gyroRateX.getValue();
+		gyros.y := gyroRateY.getValue();
+		gyros.z := gyroRateZ.getValue();
+		--deltaAngles := gyroDeltaAngles;
+		accels.x := accelX.getValue();
+		accels.y := accelY.getValue();
+		accels.z := accelZ.getValue();
+		--deltaVelocitys := accelDeltaVelocitys;
+	);
+
+	-- Return first gyro reading. Dummy used for R&D presentation.
+	public getGyro: () ==> Vector`Vector3
+	getGyro() == return gyros;
+	
+	-- Return first accel reading. Dummy used for R&D presentation.
+	public getAccel: () ==> Vector`Vector3
+	getAccel() == return accels;
+
+
+end AP_InertialSensor

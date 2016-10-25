@@ -1,0 +1,41 @@
+class AP_Compass 
+
+instance variables
+	-- TODO Contract values
+	mag : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	
+	-- Accumulate samples
+	sum : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	count : real := 0;
+	
+	-- mean value of accumulated samples
+	field : Vector`Vector3 := mk_Vector`Vector3(0,0,0);
+	
+	--current : real := 0;
+operations
+
+	public accumulate: () ==> ()
+	accumulate() == (
+		sum := Vector`add({sum,mag});
+		count := count + 1;
+	);
+	
+	public read: () ==> ()
+	read() == (
+		if count = 0 then
+			return;
+		
+		field := Vector`multiply(sum,1000/count);
+		sum := Vector`zero();
+		count := 0;
+	);
+	
+
+	-- Motor compensation is NOT included in the model.
+	/*public setCurrent: (real) ==> ()
+	setCurrent(curr) == (
+		current := curr;
+	);*/
+
+
+end AP_Compass
