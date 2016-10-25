@@ -1,0 +1,1 @@
+{"startTime":0,"endTime":100,"multimodel_path":"Multi-models\\mm-new (12)\\mm-new (12).mm.json","livestream":{"{de}.deInstance":["motor1"]},"algorithm":{"type":"var-step","initsize":0.0005,"size":[0.0005,0.2],"constraints":{}}}
