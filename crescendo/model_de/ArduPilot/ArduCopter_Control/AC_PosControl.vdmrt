@@ -49,8 +49,8 @@ operations
 
 	public withinBounds : Vector`Vector3  ==> bool -- ADDED
 	withinBounds(targetPosition) == (
-		IO`println("withinbounds:");
-		IO`println(abs(insNav.getAltitude() - targetPosition.z));
+		--IO`println("withinbounds:");
+		--IO`println(abs(insNav.getAltitude() - targetPosition.z));
 		return abs(insNav.getAltitude() - targetPosition.z) < 50
 	);
 

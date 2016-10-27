@@ -1,5 +1,5 @@
 #
-#Thu Aug 11 15:05:04 CEST 2016
+#Wed Oct 26 11:35:30 CEST 2016
 AP_Baro.climbRate=real,variable
 Matrix.initValue=_operation,sync
 AP_AHRS.getHome=_operation,sync
@@ -61,6 +61,7 @@ AC_PID.derivative=real,variable
 DerivativeFilterTest.testSlopeTwo=_operation,sync
 AP_Baro.altitude=real,variable
 AC_PID.input=real,variable
+AC_PosControl.setAltTarget=_operation,sync
 Attitude.Attitude=_operation,sync
 LowPassFilter.reset=_operation,sync
 ArduCopterTest.Execute=_operation,sync

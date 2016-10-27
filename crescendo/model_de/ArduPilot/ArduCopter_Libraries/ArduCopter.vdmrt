@@ -137,6 +137,6 @@ thread periodic(MAIN_LOOP_RATE * 1e9, 0, 0, 0)(loop)
 
 values
 	public USE_MPC : real = 0; -- sdp
-	public MAIN_LOOP_RATE : real = 400; -- sdp
+	public MAIN_LOOP_RATE : real = 0.0025; -- sdp
 
 end ArduCopter

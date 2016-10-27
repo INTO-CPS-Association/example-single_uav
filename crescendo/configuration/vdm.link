@@ -12,6 +12,8 @@ input accelerometerX = ArduPilot.arduCopter.ins.accelX;
 input accelerometerY = ArduPilot.arduCopter.ins.accelY;
 input accelerometerZ = ArduPilot.arduCopter.ins.accelZ;
 
+input gpsX = ArduPilot.arduCopter.gps.locationLat;
+input gpsY = ArduPilot.arduCopter.gps.locationLong;
 input gpsZ = ArduPilot.arduCopter.gps.locationAlt;
 input gpsVelX = ArduPilot.arduCopter.gps.velocityX;
 input gpsVelY = ArduPilot.arduCopter.gps.velocityY;

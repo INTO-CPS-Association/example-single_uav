@@ -9,7 +9,7 @@ values
 	-- Lattitude/longitude to cm
 	public LATLON_TO_CM = 1.113195;
 	-- Acceleration due to gravity in m/s/s
-	public GRAVITY_MSS : real  = 0.0; -- sdp
+	public GRAVITY_MSS : real  = 9.82; -- sdp
 functions
 	-- Convert degrees to radians 
 	public static radians : real -> real

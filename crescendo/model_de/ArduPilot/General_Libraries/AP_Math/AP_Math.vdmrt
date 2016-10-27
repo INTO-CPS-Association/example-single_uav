@@ -4,12 +4,12 @@ values
 	-- Degrees/radians convertion 
 	DEG_TO_RAD = 0.0174532925199432954743716805978692718781530857086181640625;
 	RAD_TO_DEG = 57.29577951308232286464772187173366546630859375;
-	public RAD_TO_DEGX100 = RAD_TO_DEG*100; -- centi-degrees
+	public RAD_TO_DEGX100 : real = RAD_TO_DEG*100; -- centi-degrees
 	
 	-- Lattitude/longitude to cm
 	public LATLON_TO_CM = 1.113195;
 	-- Acceleration due to gravity in m/s/s
-	public GRAVITY_MSS : real  = 0.0; -- sdp
+	public GRAVITY_MSS : real  = 9.82; -- sdp
 functions
 	-- Convert degrees to radians 
 	public static radians : real -> real

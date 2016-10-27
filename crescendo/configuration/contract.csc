@@ -15,6 +15,8 @@ monitored real accelerometerY;
 monitored real accelerometerZ;
 
 -- GPS
+monitored real gpsX;
+monitored real gpsY;
 monitored real gpsZ;
 monitored real gpsVelX;
 monitored real gpsVelY;
