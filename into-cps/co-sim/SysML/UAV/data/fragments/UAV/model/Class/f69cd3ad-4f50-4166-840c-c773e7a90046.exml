@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="DE" version="4">
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Ardupilot" version="4">
   <OBJECT>
-    <ID name="DE" mc="Standard.Class" uid="f69cd3ad-4f50-4166-840c-c773e7a90046"/>
+    <ID name="Ardupilot" mc="Standard.Class" uid="f69cd3ad-4f50-4166-840c-c773e7a90046"/>
     <PID name="uav" mc="Standard.Package" uid="e422a0d7-e785-453c-aee3-003749c25bcf"/>
     <ATTRIBUTES>
       <ATT name="IsActive">false</ATT>
@@ -11,7 +11,7 @@
       <ATT name="IsLeaf">false</ATT>
       <ATT name="IsRoot">false</ATT>
       <ATT name="Visibility">Public</ATT>
-      <ATT name="Name"><![CDATA[DE]]></ATT>
+      <ATT name="Name"><![CDATA[Ardupilot]]></ATT>
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
@@ -401,7 +401,7 @@
               <OBJECT>
                 <ID name="" mc="Standard.TagParameter" uid="087cf560-a030-4607-9da0-f6553321c71b"/>
                 <ATTRIBUTES>
-                  <ATT name="Value"><![CDATA[949d2daa-db7d-4086-bf72-2d54a012044e]]></ATT>
+                  <ATT name="Value"><![CDATA[6ba5d1ed-66e2-4119-8362-13cbe71c6b0a]]></ATT>
                   <ATT name="status">1970354901745664</ATT>
                 </ATTRIBUTES>
                 <DEPENDENCIES></DEPENDENCIES>

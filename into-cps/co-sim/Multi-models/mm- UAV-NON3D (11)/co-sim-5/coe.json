@@ -1,1 +1,0 @@
-{"startTime":0,"endTime":20,"multimodel_path":"Multi-models\\mm- UAV-NON3D (11)\\mm.json","livestream":{"{CTIns}.CTIns":["gpsZ"]},"visible":false,"loggingOn":false,"overrideLogLevel":null,"enableAllLogCategoriesPerInstance":false,"algorithm":{"type":"var-step","initsize":0.00005,"size":[0.0005,1],"constraints":{}}}

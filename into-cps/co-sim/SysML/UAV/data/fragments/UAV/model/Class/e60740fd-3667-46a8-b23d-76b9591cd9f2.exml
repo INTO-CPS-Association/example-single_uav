@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="CT" version="4">
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="ArduCopter" version="4">
   <OBJECT>
-    <ID name="CT" mc="Standard.Class" uid="e60740fd-3667-46a8-b23d-76b9591cd9f2"/>
+    <ID name="ArduCopter" mc="Standard.Class" uid="e60740fd-3667-46a8-b23d-76b9591cd9f2"/>
     <PID name="uav" mc="Standard.Package" uid="e422a0d7-e785-453c-aee3-003749c25bcf"/>
     <ATTRIBUTES>
       <ATT name="IsActive">false</ATT>
@@ -11,7 +11,7 @@
       <ATT name="IsLeaf">false</ATT>
       <ATT name="IsRoot">false</ATT>
       <ATT name="Visibility">Public</ATT>
-      <ATT name="Name"><![CDATA[CT]]></ATT>
+      <ATT name="Name"><![CDATA[ArduCopter]]></ATT>
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
@@ -539,7 +539,7 @@
               <OBJECT>
                 <ID name="" mc="Standard.TagParameter" uid="4f90a5ce-7c7e-4236-a7e2-8be984d8741b"/>
                 <ATTRIBUTES>
-                  <ATT name="Value"><![CDATA[046c3909-9fd9-409b-a7da-d7ac8ffb3918]]></ATT>
+                  <ATT name="Value"><![CDATA[ff3b9f8a-8983-42c7-b2fe-07a976f1f651]]></ATT>
                   <ATT name="status">1970354901745664</ATT>
                 </ATTRIBUTES>
                 <DEPENDENCIES></DEPENDENCIES>
