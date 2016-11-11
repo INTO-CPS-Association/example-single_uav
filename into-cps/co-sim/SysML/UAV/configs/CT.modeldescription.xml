@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<fmiModelDescription fmiVersion="2.0" modelName="CT" guid="e60740fd-3667-46a8-b23d-76b9591cd9f2" generationTool="Modelio">
+    <CoSimulation/>
+    <ModelVariables>
+        <ScalarVariable name="motorSetpoint1" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motorSetpoint2" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motorSetpoint3" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motorSetpoint4" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerX" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerY" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerZ" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsX" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsY" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsZ" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroX" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroY" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroZ" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniPitch" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniRoll" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniYaw" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniX" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniY" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="aniZ" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationLat" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationLong" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationAlt" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+    </ModelVariables>
+    <ModelStructure>
+        <Outputs>
+            <Unknown index="4"/>
+            <Unknown index="5"/>
+            <Unknown index="6"/>
+            <Unknown index="7"/>
+            <Unknown index="8"/>
+            <Unknown index="9"/>
+            <Unknown index="10"/>
+            <Unknown index="11"/>
+            <Unknown index="12"/>
+            <Unknown index="13"/>
+            <Unknown index="14"/>
+            <Unknown index="15"/>
+            <Unknown index="16"/>
+            <Unknown index="17"/>
+            <Unknown index="18"/>
+            <Unknown index="19"/>
+            <Unknown index="20"/>
+            <Unknown index="21"/>
+        </Outputs>
+    </ModelStructure>
+</fmiModelDescription>

@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="UAV" version="4">
+  <OBJECT>
+    <ID name="UAV" mc="Standard.Project" uid="70a4b472-bb0f-47ec-beeb-bdd87079c062"/>
+    <ATTRIBUTES>
+      <ATT name="ProjectContext"></ATT>
+      <ATT name="ProjectDescr"></ATT>
+      <ATT name="Name"><![CDATA[UAV]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES>
+      <COMP relation="DiagramRoot">
+        <COMPID name="UAV" mc="Standard.DiagramSet" uid="df79e6d0-f9d5-4a6b-b796-58f1ed67f0a8"/>
+      </COMP>
+      <COMP relation="Model">
+        <COMPID name="uav" mc="Standard.Package" uid="e422a0d7-e785-453c-aee3-003749c25bcf"/>
+      </COMP>
+    </DEPENDENCIES>
+  </OBJECT>
+</EXT>

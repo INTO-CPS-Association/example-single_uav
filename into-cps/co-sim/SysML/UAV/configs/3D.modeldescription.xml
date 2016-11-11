@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<fmiModelDescription fmiVersion="2.0" modelName="3D" guid="5442f705-1224-48c1-aef0-68865c990172" generationTool="Modelio">
+    <CoSimulation/>
+    <ModelVariables>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniPitch" valueReference="0" causality="input" variability="discrete"/>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniRoll" valueReference="0" causality="input" variability="discrete"/>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniYaw" valueReference="0" causality="input" variability="discrete"/>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniX" valueReference="0" causality="input" variability="discrete"/>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniY" valueReference="0" causality="input" variability="discrete"/>
+        <ScalarVariable name="ArduCopter\RigidBodyDynamics\aniZ" valueReference="0" causality="input" variability="discrete"/>
+    </ModelVariables>
+    <ModelStructure>
+        <Outputs/>
+    </ModelStructure>
+</fmiModelDescription>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<fmiModelDescription fmiVersion="2.0" modelName="DE" guid="f69cd3ad-4f50-4166-840c-c773e7a90046" generationTool="Modelio">
+    <CoSimulation/>
+    <ModelVariables>
+        <ScalarVariable name="motor2" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motor3" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motor4" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerX" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerY" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="accelerometerZ" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationAlt" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationLat" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="locationLong" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroX" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroY" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gyroZ" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="motor1" valueReference="0" causality="output" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsX" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsY" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+        <ScalarVariable name="gpsZ" valueReference="0" causality="input" variability="discrete">
+            <Real start="0.0"/>
+        </ScalarVariable>
+    </ModelVariables>
+    <ModelStructure>
+        <Outputs>
+            <Unknown index="0"/>
+            <Unknown index="1"/>
+            <Unknown index="2"/>
+            <Unknown index="12"/>
+        </Outputs>
+    </ModelStructure>
+</fmiModelDescription>
