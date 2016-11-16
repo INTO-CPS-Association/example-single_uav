@@ -1,6 +1,0 @@
-when time = 1 do
-(de real pilote_desired_throttle := 650;);
-
--- yaw test
-when time = 0.1 do
-	( de real yawRateTarget := 2000; );
