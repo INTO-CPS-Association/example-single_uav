@@ -4,3 +4,5 @@
 /**/*.dlaunch
 /**/*.logrt.rtbin
 /**/*.logrt
+**/.runtime
+**/.config
