@@ -1,5 +1,5 @@
 # Unmanned Aerial Vehicle
-
+**THIS EXAMPLE IS NO LONGER MAINTAINED. IF YOU ARE INTERESTING IN THE EXAMPLE, SEE THE CONTACT DETAILS AT THE BOTTOM**
 ## Overview
 The study models the physical dynamics as well as the discrete controller of an Unmanned Aerial Vehicle (UAV). Focus on the details of the model contribute to a high model fidelity, enabling the multi-model to be used to compare alternative control algorithms.
 
